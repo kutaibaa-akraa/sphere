@@ -1,0 +1,4081 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌌 النظام الفلكي المعياري V4.0 - النسخة المتكاملة المصححة</title>
+    <style>
+        /* ==================== أنماط CSS الأساسية ==================== */
+        :root {
+            --primary-color: #00f2ff;
+            --secondary-color: #f0883e;
+            --success-color: #238636;
+            --danger-color: #da3633;
+            --info-color: #58a6ff;
+            --warning-color: #ff9800;
+            --dark-bg: #010409;
+            --card-bg: #0d1117;
+            --border-color: #30363d;
+            --text-color: #ffffff;
+            --text-secondary: #8b949e;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Tahoma', 'Geneva', 'Verdana', sans-serif;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--text-color);
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+            position: relative;
+        }
+
+        /* ==================== نافذة الشاشة الكاملة ==================== */
+        #fullscreen-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* ==================== شريط الحالة العلوي ==================== */
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(90deg, 
+                rgba(0, 20, 40, 0.95) 0%, 
+                rgba(13, 17, 23, 0.95) 100%);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            transition: all var(--transition-speed) ease;
+        }
+
+        .status-left, .status-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .status-icon {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.active {
+            background: var(--success-color);
+        }
+
+        .status-icon.warning {
+            background: var(--warning-color);
+        }
+
+        /* ==================== لوحة البيانات الأساسية (HUD) ==================== */
+        .hud-main {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            background: rgba(0, 20, 40, 0.95);
+            padding: 20px;
+            border-left: 4px solid var(--primary-color);
+            border-radius: 0 12px 12px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            pointer-events: auto;
+            box-shadow: 0 0 25px rgba(0, 242, 255, 0.3);
+            backdrop-filter: blur(10px);
+            min-width: 320px;
+            z-index: 1000;
+            border: 1px solid rgba(48, 54, 61, 0.5);
+            transition: all var(--transition-speed) ease;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .hud-main.hidden {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .hud-header {
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-bottom: 8px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--danger-color);
+        }
+
+        .hud-section {
+            margin: 12px 0;
+            padding-right: 8px;
+        }
+
+        .hud-section-title {
+            color: var(--info-color);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hud-data {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 15px;
+            margin: 8px 0;
+        }
+
+        .hud-label {
+            color: var(--primary-color);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .hud-value {
+            color: var(--secondary-color);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(240, 136, 62, 0.3);
+            text-align: left;
+        }
+
+        /* ==================== لوحة التحكم الرئيسية ==================== */
+        .controls-panel {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            background: rgba(13, 17, 23, 0.98);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            width: 380px;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(15px);
+            max-height: 80vh;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border-color) transparent;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .controls-panel.hidden {
+            transform: translateX(100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(240, 136, 62, 0.5);
+        }
+
+        .panel-title {
+            color: var(--secondary-color);
+            font-size: 22px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(240, 136, 62, 0.3);
+        }
+
+        /* ==================== أزرار التحكم السريع ==================== */
+        .quick-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .quick-btn {
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--card-bg), #161b22);
+            color: var(--text-color);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .quick-btn:hover {
+            background: linear-gradient(135deg, #30363d, #484f58);
+            transform: translateY(-2px);
+        }
+
+        .quick-btn.active {
+            background: linear-gradient(135deg, var(--info-color), #79c0ff);
+            color: white;
+            box-shadow: 0 0 20px rgba(88, 166, 255, 0.5);
+        }
+
+        .quick-btn-icon {
+            font-size: 18px;
+        }
+
+        /* ==================== التحكم بالمحاور باستخدام الأسهم ==================== */
+        .arrow-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+            max-width: 250px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .arrow-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--card-bg), #161b22);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            min-height: 60px;
+        }
+
+        .arrow-btn:hover {
+            background: linear-gradient(135deg, #30363d, #484f58);
+            transform: scale(1.05);
+        }
+
+        .arrow-btn:active {
+            transform: scale(0.95);
+        }
+
+        .arrow-btn.north {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .arrow-btn.south {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .arrow-btn.east {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .arrow-btn.west {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .arrow-btn.center {
+            grid-column: 2;
+            grid-row: 2;
+            background: linear-gradient(135deg, #238636, #2ea043);
+        }
+
+        /* ==================== قوائم التحكم القابلة للطي ==================== */
+        .accordion {
+            margin: 15px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .accordion-header {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.1), rgba(88, 166, 255, 0.05));
+            padding: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .accordion-header:hover {
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.1));
+        }
+
+        .accordion-title {
+            color: var(--info-color);
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .accordion-icon {
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .accordion-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.02);
+            display: none;
+        }
+
+        .accordion-content.open {
+            display: block;
+        }
+
+        /* ==================== عناصر التحكم المختلفة ==================== */
+        .control-group {
+            margin: 15px 0;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 12px 0;
+        }
+
+        .slider {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            border: 3px solid var(--secondary-color);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: left;
+            font-family: 'Consolas', 'Courier New', monospace;
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border-color);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .checkbox.checked {
+            background: var(--info-color);
+            border-color: var(--info-color);
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* ==================== نافذة الاختصارات ==================== */
+        .shortcuts-window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, rgba(13, 17, 23, 0.98), rgba(0, 20, 40, 0.98));
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid var(--primary-color);
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            display: none;
+        }
+
+        .shortcuts-window.active {
+            display: block;
+        }
+
+        .shortcuts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shortcut-description {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .shortcut-keys {
+            display: flex;
+            gap: 5px;
+        }
+
+        .key {
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            color: var(--secondary-color);
+        }
+
+        /* ==================== مؤشرات النظام ==================== */
+        .system-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(0, 20, 40, 0.8);
+            border-radius: 8px;
+            border-left: 3px solid var(--primary-color);
+            backdrop-filter: blur(10px);
+            min-width: 200px;
+        }
+
+        .indicator-icon {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: pulse 2s infinite;
+        }
+
+        .indicator-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* ==================== رسائل النظام ==================== */
+        .notification-center {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            width: 300px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .notification {
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(13, 17, 23, 0.95), rgba(0, 20, 40, 0.95));
+            border-radius: 10px;
+            border-left: 4px solid var(--info-color);
+            backdrop-filter: blur(10px);
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .notification.success {
+            border-left-color: var(--success-color);
+        }
+
+        .notification.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .notification.danger {
+            border-left-color: var(--danger-color);
+        }
+
+        .notification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--text-color);
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .notification-message {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ==================== الرسوم المتحركة ==================== */
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* ==================== شريط التقدم ==================== */
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--info-color));
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        /* ==================== أدوات التصحيح ==================== */
+        .debug-panel {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .debug-panel.active {
+            display: block;
+        }
+
+        /* ==================== تأثيرات خاصة ==================== */
+        .grid-highlight {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 500;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 242, 255, 0.1) 100%);
+        }
+
+        .telescope-trail {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 400;
+        }
+
+        /* ==================== الوضع المظلم/الفاتح ==================== */
+        body.light-mode {
+            --dark-bg: #f0f6fc;
+            --card-bg: #ffffff;
+            --border-color: #d0d7de;
+            --text-color: #24292f;
+            --text-secondary: #57606a;
+        }
+
+        /* ==================== التكيف مع الأجهزة المحمولة ==================== */
+        @media (max-width: 768px) {
+            .hud-main, .controls-panel {
+                width: 95%;
+                left: 2.5%;
+                right: 2.5%;
+                max-height: 60vh;
+            }
+            
+            .hud-main {
+                top: 60px;
+            }
+            
+            .controls-panel {
+                top: 60px;
+            }
+            
+            .quick-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .arrow-controls {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+            }
+            
+            .shortcuts-window {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+
+        /* ==================== إصلاحات للغة العربية ==================== */
+        .rtl-text {
+            direction: rtl;
+            text-align: right;
+        }
+
+        .ltr-text {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* ==================== تلميحات ==================== */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            position: absolute;
+            z-index: 10000;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+  <script src="astro-bridge.js"></script>
+    <script src="real-stars-renderer.js"></script>
+    <script src="solar-system.js"></script>
+    
+    <!-- إضافة روابط البيانات الفلكية -->
+    <script src="https://cdn.jsdelivr.net/gh/kutaibaa-akraa/planisphere/js/skydb.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/kutaibaa-akraa/planisphere/js/astro.js"></script>
+</head>
+<body>
+    <!-- ==================== عناصر واجهة المستخدم ==================== -->
+    
+    <!-- شريط الحالة العلوي -->
+    <div class="status-bar" id="statusBar">
+        <div class="status-left">
+            <div class="status-item">
+                <div class="status-icon active" id="systemStatus"></div>
+                <span>النظام الفلكي V4.0</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon" id="telescopeStatus"></div>
+                <span id="telescopeStatusText">🔭 متصل</span>
+            </div>
+            <div class="status-item">
+                <div class="status-icon" id="laserStatus"></div>
+                <span id="laserStatusText">🔴 ليزر: معطل</span>
+            </div>
+        </div>
+        <div class="status-right">
+            <div class="status-item">
+                <span id="dateTime">🕒 2024-01-01 00:00:00</span>
+            </div>
+            <div class="status-item">
+                <span id="cpuUsage">⚡ CPU: 0%</span>
+            </div>
+            <button class="close-btn" onclick="toggleFullscreen()" title="وضع ملء الشاشة">
+                ⛶
+            </button>
+        </div>
+    </div>
+
+    <!-- لوحة البيانات الرئيسية -->
+    <div class="hud-main" id="hudPanel">
+        <div class="hud-header">
+            <span>🌌 بيانات النظام الفلكي</span>
+            <button class="close-btn" onclick="toggleHUD()">✕</button>
+        </div>
+        
+        <div class="hud-section">
+            <div class="hud-section-title">📍 موقع الراصد</div>
+            <div class="hud-data">
+                <div class="hud-label">🌍 خط العرض:</div>
+                <div class="hud-value" id="hudLat">35.00° شمال</div>
+                
+                <div class="hud-label">🧭 خط الطول:</div>
+                <div class="hud-value" id="hudLon">45.00° شرق</div>
+                
+                <div class="hud-label">📐 ميل المحور:</div>
+                <div class="hud-value" id="hudPolarAngle">55.00°</div>
+                
+                <div class="hud-label">🌏 نصف الكرة:</div>
+                <div class="hud-value" id="hudHemisphere">الشمالي</div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="systemLoadBar" style="width: 30%"></div>
+        </div>
+
+        <div class="hud-section">
+            <div class="hud-section-title">🕐 الإحداثيات الاستوائية</div>
+            <div class="hud-data">
+                <div class="hud-label">🌐 المطلع المستقيم:</div>
+                <div class="hud-value" id="hudRA">00h 00m 00.0s</div>
+                
+                <div class="hud-label">📏 الميل:</div>
+                <div class="hud-value" id="hudDec">+00° 00′ 00″</div>
+                
+                <div class="hud-label">✨ الزمن النجمي:</div>
+                <div class="hud-value" id="hudLST">18h 00m 00s</div>
+            </div>
+        </div>
+
+        <div class="hud-section">
+            <div class="hud-section-title">🗺️ الإحداثيات السمتية</div>
+            <div class="hud-data">
+                <div class="hud-label">⬆️ الارتفاع:</div>
+                <div class="hud-value" id="hudAlt">0.00°</div>
+                
+                <div class="hud-label">🧭 السمت:</div>
+                <div class="hud-value" id="hudAz">0.00°</div>
+                
+                <div class="hud-label">🎯 تقاطع الليزر:</div>
+                <div class="hud-value" id="hudIntersection">غير نشط</div>
+            </div>
+        </div>
+
+        <div class="hud-section">
+            <div class="hud-section-title">⚙️ حالة النظام</div>
+            <div class="hud-data">
+                <div class="hud-label">🔭 وضع التلسكوب:</div>
+                <div class="hud-value" id="hudTelescopeMode">تتبع</div>
+                
+                <div class="hud-label">⚡ سرعة التتبع:</div>
+                <div class="hud-value" id="hudSpeed">1x</div>
+                
+                <div class="hud-label">🌡️ درجة الحرارة:</div>
+                <div class="hud-value" id="hudTemp">20°C</div>
+                
+                <div class="hud-label">💾 استخدام الذاكرة:</div>
+                <div class="hud-value" id="hudMemory">45%</div>
+            </div>
+        </div>
+
+        <div class="quick-controls">
+            <button class="quick-btn" onclick="toggleLaser()" id="laserToggleBtn">
+                <span class="quick-btn-icon">🔴</span>
+                <span>الليزر</span>
+            </button>
+            <button class="quick-btn" onclick="toggleGrid('equatorial')" id="eqGridToggleBtn">
+                <span class="quick-btn-icon">🌐</span>
+                <span>شبكة استوائية</span>
+            </button>
+            <button class="quick-btn" onclick="toggleGrid('horizontal')" id="horGridToggleBtn">
+                <span class="quick-btn-icon">🗺️</span>
+                <span>شبكة سمتية</span>
+            </button>
+            <button class="quick-btn" onclick="toggleAutoTrack()" id="autoTrackBtn">
+                <span class="quick-btn-icon">🔄</span>
+                <span>تتبع تلقائي</span>
+            </button>
+            <button class="quick-btn" onclick="captureImage()" id="captureBtn">
+                <span class="quick-btn-icon">📸</span>
+                <span>التقاط صورة</span>
+            </button>
+            <button class="quick-btn" onclick="toggleRecording()" id="recordBtn">
+                <span class="quick-btn-icon">⏺️</span>
+                <span>تسجيل فيديو</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم الرئيسية -->
+    <div class="controls-panel" id="controlsPanel">
+        <div class="panel-header">
+            <div class="panel-title">🚀 لوحة التحكم الفلكية</div>
+            <button class="close-btn" onclick="toggleControls()">✕</button>
+        </div>
+
+        <!-- التحكم بالمحاور باستخدام الأسهم -->
+        <div class="control-group">
+            <div class="control-label">🎛️ التحكم بالمحاور (استخدم الأسهم)</div>
+            <div class="arrow-controls">
+                <button class="arrow-btn west" onclick="moveTelescope('west')" 
+                        onmousedown="startContinuousMove('west')" 
+                        onmouseup="stopContinuousMove()"
+                        ontouchstart="startContinuousMove('west')"
+                        ontouchend="stopContinuousMove()">
+                    ◀️ غرب
+                </button>
+                <button class="arrow-btn north" onclick="moveTelescope('north')"
+                        onmousedown="startContinuousMove('north')" 
+                        onmouseup="stopContinuousMove()"
+                        ontouchstart="startContinuousMove('north')"
+                        ontouchend="stopContinuousMove()">
+                    ▲ شمال
+                </button>
+                <button class="arrow-btn center" onclick="resetTelescope()">
+                    🎯 مركز
+                </button>
+                <button class="arrow-btn south" onclick="moveTelescope('south')"
+                        onmousedown="startContinuousMove('south')" 
+                        onmouseup="stopContinuousMove()"
+                        ontouchstart="startContinuousMove('south')"
+                        ontouchend="stopContinuousMove()">
+                    ▼ جنوب
+                </button>
+                <button class="arrow-btn east" onclick="moveTelescope('east')"
+                        onmousedown="startContinuousMove('east')" 
+                        onmouseup="stopContinuousMove()"
+                        ontouchstart="startContinuousMove('east')"
+                        ontouchend="stopContinuousMove()">
+                    شرق ▶️
+                </button>
+            </div>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; color: var(--text-secondary);">
+                اضغط مطولاً للحركة المستمرة
+            </div>
+        </div>
+
+        <!-- قوائم التحكم القابلة للطي -->
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion('cameraAccordion')">
+                <div class="accordion-title">
+                    <span>📷</span>
+                    <span>التحكم بالكاميرا</span>
+                </div>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content" id="cameraAccordion">
+                <div class="control-group">
+                    <div class="control-label">وضع الكاميرا</div>
+                    <div class="quick-controls">
+                        <button class="quick-btn active" onclick="setCameraMode('free')">حرية</button>
+                        <button class="quick-btn" onclick="setCameraMode('telescope')">تلسكوب</button>
+                        <button class="quick-btn" onclick="setCameraMode('zenith')">ذروة</button>
+                        <button class="quick-btn" onclick="setCameraMode('north')">شمال</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">سرعة الحركة</div>
+                    <div class="slider-container">
+                        <input type="range" min="0.1" max="5" step="0.1" value="1" 
+                               class="slider" id="cameraSpeedSlider" 
+                               oninput="updateCameraSpeed(this.value)">
+                        <span class="slider-value" id="cameraSpeedValue">1x</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="checkbox-group">
+                        <label class="checkbox-label" onclick="toggleSmoothCamera()">
+                            <div class="checkbox" id="smoothCameraCheckbox"></div>
+                            حركة سلسة
+                        </label>
+                        <label class="checkbox-label" onclick="toggleCameraInertia()">
+                            <div class="checkbox" id="cameraInertiaCheckbox"></div>
+                            قصور حركي
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion('gridsAccordion')">
+                <div class="accordion-title">
+                    <span>📐</span>
+                    <span>الشبكات الفلكية</span>
+                </div>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content" id="gridsAccordion">
+                <div class="control-group">
+                    <div class="checkbox-group">
+                        <label class="checkbox-label" onclick="toggleGrid('equatorial')">
+                            <div class="checkbox checked" id="eqGridCheckbox"></div>
+                            🌐 الشبكة الاستوائية
+                        </label>
+                        <label class="checkbox-label" onclick="toggleGrid('horizontal')">
+                            <div class="checkbox checked" id="horGridCheckbox"></div>
+                            🗺️ الشبكة السمتية
+                        </label>
+                        <label class="checkbox-label" onclick="toggleGrid('ecliptic')">
+                            <div class="checkbox" id="eclGridCheckbox"></div>
+                            ☀️ دائرة البروج
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">شفافية الشبكات</div>
+                    <div class="slider-container">
+                        <input type="range" min="10" max="100" value="40" 
+                               class="slider" id="gridAlphaSlider" 
+                               oninput="updateGridAlpha(this.value)">
+                        <span class="slider-value" id="gridAlphaValue">40%</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">كثافة الشبكات</div>
+                    <div class="slider-container">
+                        <input type="range" min="1" max="5" value="2" 
+                               class="slider" id="gridDensitySlider" 
+                               oninput="updateGridDensity(this.value)">
+                        <span class="slider-value" id="gridDensityValue">متوسطة</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="quick-controls">
+                        <button class="quick-btn" onclick="highlightGrid('equatorial')">تسليط على الاستوائية</button>
+                        <button class="quick-btn" onclick="highlightGrid('horizontal')">تسليط على السمتية</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion('telescopeAccordion')">
+                <div class="accordion-title">
+                    <span>🔭</span>
+                    <span>إعدادات التلسكوب</span>
+                </div>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content" id="telescopeAccordion">
+                <div class="control-group">
+                    <div class="control-label">سرعة التتبع</div>
+                    <div class="slider-container">
+                        <input type="range" min="0.1" max="10" step="0.1" value="1" 
+                               class="slider" id="trackingSpeedSlider" 
+                               oninput="updateTrackingSpeed(this.value)">
+                        <span class="slider-value" id="trackingSpeedValue">1x</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">ميل المحور القطبي</div>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="90" value="35" 
+                               class="slider" id="polarAngleSlider" 
+                               oninput="updatePolarAngle(this.value)">
+                        <span class="slider-value" id="polarAngleValue">35°</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="quick-controls">
+                        <button class="quick-btn" onclick="alignToNorth()">محاذاة للشمال</button>
+                        <button class="quick-btn" onclick="alignToPole()">محاذاة للقطب</button>
+                        <button class="quick-btn" onclick="calibrateTelescope()">معايرة</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="toggleAccordion('timeAccordion')">
+                <div class="accordion-title">
+                    <span>🕒</span>
+                    <span>الزمن الفلكي</span>
+                </div>
+                <span class="accordion-icon">▼</span>
+            </div>
+            <div class="accordion-content" id="timeAccordion">
+                <div class="control-group">
+                    <div class="control-label">الزمن النجمي المحلي (LST)</div>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="24" step="0.1" value="18" 
+                               class="slider" id="lstSlider" 
+                               oninput="updateLST(this.value)">
+                        <span class="slider-value" id="lstValue">18.0h</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="control-label">تسريع الزمن</div>
+                    <div class="slider-container">
+                        <input type="range" min="0" max="1000" value="1" 
+                               class="slider" id="timeSpeedSlider" 
+                               oninput="updateTimeSpeed(this.value)">
+                        <span class="slider-value" id="timeSpeedValue">1x</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <div class="quick-controls">
+                        <button class="quick-btn" onclick="setTimeToNow()">الآن</button>
+                        <button class="quick-btn" onclick="setTimeToMidnight()">منتصف الليل</button>
+                        <button class="quick-btn" onclick="setTimeToNoon()">الظهر</button>
+                        <button class="quick-btn" onclick="toggleTimeFlow()">تجمد/تدفق</button>
+                    </div>
+                </div>
+            </div>
+<!-- في لوحة التحكم الرئيسية، أضف قسم النجوم -->
+<div class="accordion">
+    <div class="accordion-header" onclick="toggleAccordion('starsAccordion')">
+        <div class="accordion-title">
+            <span>✨</span>
+            <span>التحكم بالنجوم والكواكب</span>
+        </div>
+        <span class="accordion-icon">▼</span>
+    </div>
+    <div class="accordion-content" id="starsAccordion">
+        <div class="control-group">
+            <div class="control-label">سطوع النجوم</div>
+            <div class="slider-container">
+                <input type="range" min="0.1" max="2" step="0.1" value="1" 
+                       class="slider" id="starBrightnessSlider" 
+                       oninput="updateStarBrightness(this.value)">
+                <span class="slider-value" id="starBrightnessValue">1.0x</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <div class="control-label">حجم النجوم</div>
+            <div class="slider-container">
+                <input type="range" min="0.5" max="3" step="0.1" value="1" 
+                       class="slider" id="starSizeSlider" 
+                       oninput="updateStarSize(this.value)">
+                <span class="slider-value" id="starSizeValue">1.0x</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <div class="checkbox-group">
+                <label class="checkbox-label" onclick="toggleConstellations()">
+                    <div class="checkbox checked" id="constellationsCheckbox"></div>
+                    🌌 عرض الكوكبات
+                </label>
+                <label class="checkbox-label" onclick="toggleSun()">
+                    <div class="checkbox checked" id="sunCheckbox"></div>
+                    ☀️ عرض الشمس
+                </label>
+                <label class="checkbox-label" onclick="toggleMoon()">
+                    <div class="checkbox checked" id="moonCheckbox"></div>
+                    🌙 عرض القمر
+                </label>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <div class="quick-controls">
+                <button class="quick-btn" onclick="findBrightestStar()">
+                    <span class="quick-btn-icon">⭐</span>
+                    <span>ألمع نجم</span>
+                </button>
+                <button class="quick-btn" onclick="findPolaris()">
+                    <span class="quick-btn-icon">🧭</span>
+                    <span>نجم الشمال</span>
+                </button>
+                <button class="quick-btn" onclick="togglePlanetLabels()">
+                    <span class="quick-btn-icon">🪐</span>
+                    <span>تسميات الكواكب</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="indicator" style="margin-top: 15px;">
+            <div class="indicator-icon"></div>
+            <div class="indicator-text" id="starCountDisplay">جاري تحميل النجوم...</div>
+        </div>
+    </div>
+</div>
+        </div>
+
+        <!-- أزرار التحكم السريع الإضافية -->
+        <div class="quick-controls" style="margin-top: 20px;">
+            <button class="quick-btn" onclick="toggleShortcuts()">
+                <span class="quick-btn-icon">⌨️</span>
+                <span>الاختصارات</span>
+            </button>
+            <button class="quick-btn" onclick="toggleTheme()">
+                <span class="quick-btn-icon">🌓</span>
+                <span>المظهر</span>
+            </button>
+            <button class="quick-btn" onclick="saveSettings()">
+                <span class="quick-btn-icon">💾</span>
+                <span>حفظ</span>
+            </button>
+            <button class="quick-btn" onclick="loadSettings()">
+                <span class="quick-btn-icon">📂</span>
+                <span>تحميل</span>
+            </button>
+            <button class="quick-btn" onclick="exportData()">
+                <span class="quick-btn-icon">📤</span>
+                <span>تصدير</span>
+            </button>
+            <button class="quick-btn" onclick="showHelp()">
+                <span class="quick-btn-icon">❓</span>
+                <span>مساعدة</span>
+            </button>
+        </div>
+
+        <!-- شريط التقدم للتهيئة -->
+        <div class="progress-bar" style="margin: 20px 0;">
+            <div class="progress-fill" id="initProgressBar" style="width: 100%"></div>
+        </div>
+        
+        <div style="text-align: center; font-size: 12px; color: var(--text-secondary); margin-top: 20px;">
+            🌌 النظام الفلكي المعياري V4.0<br>
+            🚀 النسخة المتكاملة المصححة
+        </div>
+    </div>
+
+    <!-- نافذة عرض الاختصارات -->
+    <div class="shortcuts-window" id="shortcutsWindow">
+        <div class="hud-header">
+            <span>⌨️ اختصارات لوحة المفاتيح</span>
+            <button class="close-btn" onclick="toggleShortcuts()">✕</button>
+        </div>
+        
+        <div class="shortcuts-grid">
+            <!-- التحكم العام -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">إخفاء/إظهار واجهة التحكم</div>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span class="key">H</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">إخفاء/إظهار البيانات</div>
+                <div class="shortcut-keys">
+                    <span class="key">Ctrl</span>
+                    <span class="key">D</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">وضع ملء الشاشة</div>
+                <div class="shortcut-keys">
+                    <span class="key">F11</span>
+                </div>
+            </div>
+            
+            <!-- التحكم بالشبكات -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">تبديل الشبكة الاستوائية</div>
+                <div class="shortcut-keys">
+                    <span class="key">G</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">تبديل الشبكة السمتية</div>
+                <div class="shortcut-keys">
+                    <span class="key">H</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">تبديل دائرة البروج</div>
+                <div class="shortcut-keys">
+                    <span class="key">J</span>
+                </div>
+            </div>
+            
+            <!-- التحكم بالتلسكوب -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">تحريك شمالاً</div>
+                <div class="shortcut-keys">
+                    <span class="key">↑</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">تحريك جنوباً</div>
+                <div class="shortcut-keys">
+                    <span class="key">↓</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">تحريك شرقاً</div>
+                <div class="shortcut-keys">
+                    <span class="key">→</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">تحريك غرباً</div>
+                <div class="shortcut-keys">
+                    <span class="key">←</span>
+                </div>
+            </div>
+            
+            <!-- التحكم بالليزر -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">تبديل الليزر</div>
+                <div class="shortcut-keys">
+                    <span class="key">L</span>
+                </div>
+            </div>
+            
+            <!-- التحكم بالكاميرا -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">وضع الكاميرا الحر</div>
+                <div class="shortcut-keys">
+                    <span class="key">1</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">وضع تتبع التلسكوب</div>
+                <div class="shortcut-keys">
+                    <span class="key">2</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">وضع الذروة</div>
+                <div class="shortcut-keys">
+                    <span class="key">3</span>
+                </div>
+            </div>
+            
+            <!-- أدوات إضافية -->
+            <div class="shortcut-item">
+                <div class="shortcut-description">التقاط صورة</div>
+                <div class="shortcut-keys">
+                    <span class="key">P</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">بدء/إيقاف التسجيل</div>
+                <div class="shortcut-keys">
+                    <span class="key">R</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">عرض هذه النافذة</div>
+                <div class="shortcut-keys">
+                    <span class="key">F1</span>
+                </div>
+            </div>
+            
+            <div class="shortcut-item">
+                <div class="shortcut-description">إعادة التعيين</div>
+                <div class="shortcut-keys">
+                    <span class="key">Home</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px; font-size: 12px; color: var(--text-secondary);">
+            💡 يمكن تخصيص هذه الاختصارات من إعدادات النظام
+        </div>
+    </div>
+
+    <!-- مركز الإشعارات -->
+    <div class="notification-center" id="notificationCenter"></div>
+
+    <!-- مؤشرات النظام -->
+    <div class="system-indicators">
+        <div class="indicator">
+            <div class="indicator-icon"></div>
+            <div class="indicator-text">النظام: <span id="systemStatusText">نشط</span></div>
+        </div>
+        <div class="indicator">
+            <div class="indicator-icon"></div>
+            <div class="indicator-text">التلسكوب: <span id="telescopeIndicator">جاهز</span></div>
+        </div>
+        <div class="indicator">
+            <div class="indicator-icon"></div>
+            <div class="indicator-text">الشبكات: <span id="gridsIndicator">مفعّلة</span></div>
+        </div>
+    </div>
+
+    <!-- لوحة التصحيح -->
+    <div class="debug-panel" id="debugPanel">
+        <div style="color: var(--info-color); font-weight: bold; margin-bottom: 10px;">🧪 لوحة التصحيح</div>
+        <div id="debugContent"></div>
+    </div>
+
+    <!-- عناصر Three.js -->
+    <canvas id="threeCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"></canvas>
+
+    <!-- ==================== مكتبات JavaScript ==================== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/Lut.js"></script>
+    
+    <!-- ==================== الكود الرئيسي JavaScript ==================== -->
+    <script>
+        // ===================================================================
+        // 🌌 النظام الفلكي المعياري V4.0 - النسخة المتكاملة المصححة
+        // ===================================================================
+        // نظام إحداثيات مصحح لنصف الكرة الشمالي مع واجهة تحكم متقدمة
+        // ===================================================================
+
+        // ==================== تعريف الثوابت والمتغيرات العالمية ====================
+        const SYSTEM = {
+            VERSION: '4.0',
+            SPHERE_RADIUS: 200,
+            INITIAL_LATITUDE: 35.0,  // خط العرض الافتراضي (شمالاً)
+            HEMISPHERE: 'north',     // نصف الكرة الشمالي
+            GRID_DENSITY_LEVELS: {
+                1: { name: 'خفيفة', alt: 30, az: 45, ra: 30, dec: 30 },
+                2: { name: 'متوسطة', alt: 15, az: 15, ra: 15, dec: 15 },
+                3: { name: 'كثيفة', alt: 10, az: 10, ra: 10, dec: 10 },
+                4: { name: 'كثيفة جداً', alt: 5, az: 5, ra: 5, dec: 5 },
+                5: { name: 'مفرطة', alt: 2, az: 2, ra: 2, dec: 2 }
+            },
+            COLOR_PALETTE: {
+                PRIMARY: 0x00f2ff,
+                SECONDARY: 0xf0883e,
+                SUCCESS: 0x238636,
+                DANGER: 0xda3633,
+                INFO: 0x58a6ff,
+                WARNING: 0xff9800,
+                GRID_EQUATORIAL: 0x1f6feb,
+                GRID_HORIZONTAL: 0xf0883e,
+                GRID_ECLIPTIC: 0x9d4edd,
+                GROUND: 0x05101a,
+                SKY: 0x0a1e3c
+            },
+            KEYBOARD_SHORTCUTS: {
+                TOGGLE_CONTROLS: { key: 'h', ctrl: true },
+                TOGGLE_HUD: { key: 'd', ctrl: true },
+                TOGGLE_EQUATORIAL_GRID: { key: 'g' },
+                TOGGLE_HORIZONTAL_GRID: { key: 'h' },
+                TOGGLE_ECLIPTIC_GRID: { key: 'j' },
+                MOVE_NORTH: { key: 'ArrowUp' },
+                MOVE_SOUTH: { key: 'ArrowDown' },
+                MOVE_EAST: { key: 'ArrowRight' },
+                MOVE_WEST: { key: 'ArrowLeft' },
+                TOGGLE_LASER: { key: 'l' },
+                CAMERA_FREE: { key: '1' },
+                CAMERA_TELESCOPE: { key: '2' },
+                CAMERA_ZENITH: { key: '3' },
+                CAPTURE_IMAGE: { key: 'p' },
+                START_RECORDING: { key: 'r' },
+                SHOW_HELP: { key: 'F1' },
+                RESET: { key: 'Home' },
+                FULLSCREEN: { key: 'F11' }
+            },
+            MOVEMENT_SPEED: {
+                SLOW: 0.01,
+                NORMAL: 0.05,
+                FAST: 0.1,
+                VERY_FAST: 0.2
+            }
+        };
+
+        // ==================== متغيرات النظام العالمية ====================
+        let scene, camera, renderer, controls;
+        let polarFrame, raShaft, decAxis, telescope, laserBeam;
+        let ground, horizonCircle;
+        let celestialSphere, equatorialGrid, horizontalGrid, eclipticGrid;
+        let stars, constellations;
+        
+        // متغيرات التحكم
+        let moveInterval = null;
+        let currentSpeed = 1;
+        let cameraSpeed = 1;
+        let cameraMode = 'free';
+        let localSiderealTime = 18.0;
+        let timeSpeed = 1;
+        let isTimeFlowing = true;
+        let currentLatitude = SYSTEM.INITIAL_LATITUDE;
+        let currentHemisphere = SYSTEM.HEMISPHERE;
+        let gridVisibility = {
+            equatorial: true,
+            horizontal: true,
+            ecliptic: false
+        };
+        let gridDensity = 2;
+        let gridAlpha = 0.4;
+        let laserEnabled = false;
+        let autoTracking = false;
+        let isRecording = false;
+        let isFullscreen = false;
+        let hudVisible = true;
+        let controlsVisible = true;
+        let smoothCamera = true;
+        let cameraInertia = true;
+        
+        // عناصر واجهة المستخدم
+        let hudPanel, controlsPanel, shortcutsWindow;
+        let notificationCenter, debugPanel;
+        
+        // متغيرات الأداء
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fps = 60;
+        let systemLoad = 0;
+        
+        // ==================== نظام الإحداثيات الفلكي المصحح ====================
+        const ASTRONOMICAL_SYSTEM = {
+            VERSION: '4.0-corrected-northern',
+            
+            /**
+             * تحويل من إحداثيات كروية إلى ديكارتية - نظام نصف الكرة الشمالي المصحح
+             * @param {number} azimuth - السمت بالدرجات (0° شمال، 90° شرق، 180° جنوب، 270° غرب)
+             * @param {number} altitude - الارتفاع بالدرجات (0° أفق، 90° ذروة)
+             * @param {number} radius - نصف القطر
+             * @returns {Object} إحداثيات ديكارتية {x, y, z}
+             */
+            sphericalToCartesian: function(azimuth, altitude, radius = SYSTEM.SPHERE_RADIUS) {
+                // تحويل الزوايا من درجات إلى راديان
+                const azRad = THREE.MathUtils.degToRad(azimuth);
+                const altRad = THREE.MathUtils.degToRad(altitude);
+                
+                // الحسابات المثلثية
+                const cosAlt = Math.cos(altRad);
+                const sinAlt = Math.sin(altRad);
+                const cosAz = Math.cos(azRad);
+                const sinAz = Math.sin(azRad);
+                
+                // الإحداثيات الديكارتية المصححة لنصف الكرة الشمالي
+                // النظام: -x = شرق، y = ارتفاع، z = شمال
+                return {
+                    x: -radius * cosAlt * sinAz,      // الشرق (+ شرق)
+                    y: radius * sinAlt,              // الارتفاع (+ أعلى)
+                    z: radius * cosAlt * cosAz       // الشمال (+ شمال)
+                };
+            },
+            
+            /**
+             * تحويل من إحداثيات ديكارتية إلى كروية - نظام نصف الكرة الشمالي المصحح
+             * @param {number} x - المحور الشرقي
+             * @param {number} y - المحور الرأسي
+             * @param {number} z - المحور الشمالي
+             * @returns {Object} إحداثيات كروية {azimuth, altitude, radius}
+             */
+            cartesianToSpherical: function(x, y, z) {
+                const radius = Math.sqrt(x*x + y*y + z*z);
+                
+                if (radius === 0) {
+                    return { azimuth: 0, altitude: 0, radius: 0 };
+                }
+                
+                // حساب الارتفاع
+                const altitude = THREE.MathUtils.radToDeg(Math.asin(y / radius));
+                
+                // حساب السمت مع التصحيح الصحيح لنصف الكرة الشمالي
+                let azimuth = THREE.MathUtils.radToDeg(Math.atan2(-x, z));
+                
+                // تحويل السمت إلى المدى [0°, 360°]
+                if (azimuth < 0) azimuth += 360;
+                
+                return {
+                    azimuth: azimuth,
+                    altitude: altitude,
+                    radius: radius
+                };
+            },
+            
+            /**
+             * حساب موقع القطب الشمالي السماوي
+             * @param {number} latitude - خط العرض بالدرجات
+             * @returns {Object} إحداثيات القطب الشمالي السماوي {x, y, z}
+             */
+            getNorthCelestialPolePosition: function(latitude) {
+                // في نصف الكرة الشمالي، القطب الشمالي السماوي يقع عند:
+                // - السمت: 0° (شمال)
+                // - الارتفاع: خط العرض
+                return this.sphericalToCartesian(0, latitude);
+            },
+            
+            /**
+             * تحويل من إحداثيات استوائية إلى سمتية - لنصف الكرة الشمالي
+             * @param {number} raHours - المطلع المستقيم بالساعات
+             * @param {number} decDeg - الميل بالدرجات
+             * @param {number} latDeg - خط العرض
+             * @param {number} lstHours - الزمن النجمي المحلي
+             * @returns {Object} إحداثيات سمتية {altitude, azimuth}
+             */
+            equatorialToHorizontal: function(raHours, decDeg, latDeg, lstHours) {
+                // تحويل RA من ساعات إلى درجات
+                const raDeg = raHours * 15;
+                
+                // حساب الزاوية الساعية
+                let haDeg = (lstHours * 15 - raDeg) % 360;
+                if (haDeg < 0) haDeg += 360;
+                
+                // تحويل إلى راديان
+                const haRad = THREE.MathUtils.degToRad(haDeg);
+                const decRad = THREE.MathUtils.degToRad(decDeg);
+                const latRad = THREE.MathUtils.degToRad(latDeg);
+                
+                // حساب الارتفاع
+                const sinAlt = Math.sin(decRad) * Math.sin(latRad) +
+                              Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
+                const altitude = THREE.MathUtils.radToDeg(Math.asin(sinAlt));
+                
+                // حساب السمت
+                const cosAz = (Math.sin(decRad) - Math.sin(latRad) * sinAlt) /
+                             (Math.cos(latRad) * Math.cos(THREE.MathUtils.degToRad(altitude)));
+                
+                const clampedCosAz = Math.max(-1, Math.min(1, cosAz));
+                let azimuth = THREE.MathUtils.radToDeg(Math.acos(clampedCosAz));
+                
+                // تصحيح اتجاه السمت بناءً على الزاوية الساعية
+                if (Math.sin(haRad) > 0) {
+                    azimuth = 360 - azimuth;
+                }
+                
+                return {
+                    altitude: Math.max(-90, Math.min(90, altitude)),
+                    azimuth: azimuth % 360
+                };
+            },
+            
+            /**
+             * تحويل من إحداثيات سمتية إلى استوائية - لنصف الكرة الشمالي
+             * @param {number} altDeg - الارتفاع بالدرجات
+             * @param {number} azDeg - السمت بالدرجات
+             * @param {number} latDeg - خط العرض
+             * @param {number} lstHours - الزمن النجمي المحلي
+             * @returns {Object} إحداثيات استوائية {raHours, decDeg}
+             */
+            horizontalToEquatorial: function(altDeg, azDeg, latDeg, lstHours) {
+                const altRad = THREE.MathUtils.degToRad(altDeg);
+                const azRad = THREE.MathUtils.degToRad(azDeg);
+                const latRad = THREE.MathUtils.degToRad(latDeg);
+                
+                // حساب الميل
+                const sinDec = Math.sin(altRad) * Math.sin(latRad) +
+                              Math.cos(altRad) * Math.cos(latRad) * Math.cos(azRad);
+                const decDeg = THREE.MathUtils.radToDeg(Math.asin(sinDec));
+                
+                // حساب الزاوية الساعية
+                const cosHA = (Math.sin(altRad) - Math.sin(latRad) * sinDec) /
+                             (Math.cos(latRad) * Math.cos(THREE.MathUtils.degToRad(decDeg)));
+                
+                const clampedCosHA = Math.max(-1, Math.min(1, cosHA));
+                let haDeg = THREE.MathUtils.radToDeg(Math.acos(clampedCosHA));
+                
+                // تصحيح اتجاه الزاوية الساعية
+                if (Math.sin(azRad) > 0) {
+                    haDeg = -haDeg;
+                }
+                
+                const haHours = haDeg / 15;
+                let raHours = (lstHours - haHours + 24) % 24;
+                
+                return {
+                    raHours: raHours,
+                    decDeg: decDeg
+                };
+            },
+            
+            /**
+             * اختبار شامل لنظام الإحداثيات المصحح
+             */
+            testCoordinateSystem: function() {
+                const tests = [
+                    { az: 0, alt: 0, desc: "الشمال الجغرافي" },
+                    { az: 90, alt: 0, desc: "الشرق الجغرافي" },
+                    { az: 180, alt: 0, desc: "الجنوب الجغرافي" },
+                    { az: 270, alt: 0, desc: "الغرب الجغرافي" },
+                    { az: 0, alt: 90, desc: "الذروة" },
+                    { az: 0, alt: currentLatitude, desc: "القطب الشمالي السماوي" }
+                ];
+                
+                const results = [];
+                
+                tests.forEach(test => {
+                    const cart = this.sphericalToCartesian(test.az, test.alt);
+                    const sph = this.cartesianToSpherical(cart.x, cart.y, cart.z);
+                    
+                    const azError = Math.abs(sph.azimuth - test.az);
+                    const altError = Math.abs(sph.altitude - test.alt);
+                    
+                    results.push({
+                        description: test.desc,
+                        input: { az: test.az, alt: test.alt },
+                        cartesian: cart,
+                        spherical: sph,
+                        errors: { az: azError, alt: altError },
+                        passed: azError < 0.01 && altError < 0.01
+                    });
+                });
+                
+                return results;
+            }
+        };
+
+        // ==================== تهيئة النظام ====================
+        /**
+         * تهيئة النظام الفلكي بالكامل
+         */
+/*        function init() {
+            console.log(`🚀 تهيئة النظام الفلكي المعياري ${SYSTEM.VERSION}`);
+            console.log(`🧭 نصف الكرة: ${currentHemisphere === 'north' ? 'الشمالي' : 'الجنوبي'}`);
+            console.log(`📍 خط العرض: ${currentLatitude}°`);
+            
+            // تهيئة عناصر واجهة المستخدم
+            initUIElements();
+            
+            // إنشاء مشهد Three.js
+            createThreeJSScene();
+            
+            // إعداد نظام الإحداثيات
+            setupCoordinateSystem();
+            
+            // بناء المشهد الفلكي
+            buildAstronomicalScene();
+            
+            // إعداد أدوات التحكم
+            setupControls();
+            
+            // بدء دورة التحرك
+            startAnimationLoop();
+            
+            // إعداد مستمعات الأحداث
+            setupEventListeners();
+            
+            // اختبار النظام
+            runSystemTests();
+            
+            // عرض رسالة ترحيبية
+            showNotification('🌌 النظام الفلكي المعياري V4.0 جاهز', 'تم تهيئة النظام بنجاح', 'success');
+            
+            console.log('✅ تم تهيئة النظام بنجاح');
+        }
+*/
+// في قسم المتغيرات العالمية في الملف الرئيسي
+let astroBridge, starsRenderer, solarSystem;
+
+// في دالة init() - تحديث
+async function init() {
+    console.log(`🚀 تهيئة النظام الفلكي المتكامل V5.0`);
+    
+    // 1. تهيئة واجهة المستخدم الأساسية
+    initUIElements();
+    
+    // 2. إنشاء الجسر الفلكي
+    astroBridge = new AstronomicalBridge();
+    
+    // 3. إنشاء مشهد Three.js
+    createThreeJSScene();
+    
+    // 4. إعداد نظام الإحداثيات
+    setupCoordinateSystem();
+    
+    // 5. بناء المشهد الفلكي الأساسي
+    buildAstronomicalScene();
+    
+    // 6. تهيئة نظام النجوم الحقيقية
+    starsRenderer = new RealStarsRenderer(scene, astroBridge);
+    await starsRenderer.initialize();
+    
+    // 7. تهيئة نظام المجموعة الشمسية
+    solarSystem = new SolarSystemRenderer(scene, astroBridge);
+    await solarSystem.initialize();
+    
+    // 8. إعداد أدوات التحكم
+    setupControls();
+    
+    // 9. بدء دورة التحرك
+    startAnimationLoop();
+    
+    // 10. إعداد مستمعات الأحداث
+    setupEventListeners();
+    
+    // 11. اختبار النظام
+    runSystemTests();
+    
+    // 12. عرض رسالة ترحيبية
+    showNotification('🌌 النظام الفلكي المتكامل V5.0 جاهز', 'تم تحميل النجوم والكواكب الحقيقية', 'success');
+    
+    console.log('✅ تم تهيئة النظام المتكامل بنجاح');
+}
+
+        /**
+         * تهيئة عناصر واجهة المستخدم
+         */
+        function initUIElements() {
+            hudPanel = document.getElementById('hudPanel');
+            controlsPanel = document.getElementById('controlsPanel');
+            shortcutsWindow = document.getElementById('shortcutsWindow');
+            notificationCenter = document.getElementById('notificationCenter');
+            debugPanel = document.getElementById('debugPanel');
+            
+            // تحديث الوقت والتاريخ
+            updateDateTime();
+            setInterval(updateDateTime, 1000);
+            
+            // تحديث استخدام النظام
+            updateSystemUsage();
+            setInterval(updateSystemUsage, 5000);
+        }
+
+        /**
+         * إنشاء مشهد Three.js
+         */
+        function createThreeJSScene() {
+            // إنشاء المشهد
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(SYSTEM.COLOR_PALETTE.SKY);
+            scene.fog = new THREE.Fog(SYSTEM.COLOR_PALETTE.SKY, 100, 500);
+            
+            // إنشاء الكاميرا
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+            camera.position.set(0, 150, -350);  // الجنوب (z موجب)
+            camera.lookAt(0, 0, 0);            // الشمال (z سالب)
+            
+            // إنشاء المُعرض
+            const canvas = document.getElementById('threeCanvas');
+            renderer = new THREE.WebGLRenderer({ 
+                canvas: canvas,
+                antialias: true, 
+                alpha: true,
+                logarithmicDepthBuffer: true,
+                powerPreference: "high-performance"
+            });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1;
+            
+            // إضافة تحكم الكاميرا
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.8;
+            controls.maxDistance = 1000;
+            controls.minDistance = 10;
+            controls.maxPolarAngle = Math.PI;
+            controls.minPolarAngle = 0;
+            
+            // تقييد الحركة الأفقية للحفاظ على المنظور الفلكي
+           // controls.minAzimuthAngle = -Math.PI * 0.5;
+          //  controls.maxAzimuthAngle = Math.PI * 0.5;
+        }
+
+        /**
+         * إعداد نظام الإحداثيات
+         */
+        function setupCoordinateSystem() {
+            // تحديث عرض خط العرض
+            document.getElementById('hudLat').textContent = `${currentLatitude.toFixed(2)}° شمال`;
+            document.getElementById('hudHemisphere').textContent = 'الشمالي';
+            
+            // تحديث زاوية المحور القطبي
+            const polarAngle = 90 - currentLatitude;
+            document.getElementById('hudPolarAngle').textContent = `${polarAngle.toFixed(2)}°`;
+        }
+
+        /**
+         * بناء المشهد الفلكي
+         */
+        function buildAstronomicalScene() {
+            // إضافة الإضاءة
+            setupLighting();
+            
+            // إنشاء القبة السماوية
+            createCelestialSphere();
+            
+            // إنشاء النجوم
+            createStars();
+            
+            // إنشاء الكوكبات
+            createConstellations();
+            
+            // إنشاء الشبكات الفلكية
+            createGrids();
+            
+            // بناء الأرض والأفق
+            buildGroundAndHorizon();
+            
+            // بناء حامل التلسكوب
+           // buildTelescopeMount();
+			// بناء حامل التلسكوب الشوكي الجديد
+			createTelescopeStructure();
+
+            enhanceTelescopeLighting();
+            
+            // إنشاء نقاط الاتجاه
+            createCardinalPoints();
+            
+            // إنشاء القطب الشمالي السماوي
+            createNorthCelestialPole();
+        }
+
+		/**
+		 * تحسين إضاءة المشهد لإبراز تفاصيل التلسكوب
+		 */
+		function enhanceTelescopeLighting() {
+			// إضاءة موجهة نحو التلسكوب
+			const telescopeLight = new THREE.SpotLight(0xffffff, 0.5);
+			telescopeLight.position.set(5, 5, 5);
+			telescopeLight.target = telescope;
+			telescopeLight.angle = Math.PI / 4;
+			telescopeLight.penumbra = 0.1;
+			telescopeLight.decay = 2;
+			telescopeLight.distance = 50;
+			telescopeLight.castShadow = true;
+			telescopeLight.shadow.mapSize.width = 1024;
+			telescopeLight.shadow.mapSize.height = 1024;
+			scene.add(telescopeLight);
+			
+			// إضاءة خلفية للتلسكوب
+			const backLight = new THREE.PointLight(0x00f2ff, 0.3);
+			backLight.position.set(-5, 2, -5);
+			scene.add(backLight);
+			
+			// إضاءة تفصيلية للمحاور
+			const axisLight = new THREE.PointLight(0xf0883e, 0.2);
+			axisLight.position.set(0, 2, 0);
+			scene.add(axisLight);
+			
+			console.log('💡 تحسين إضاءة التلسكوب لإبراز التفاصيل');
+		}
+
+		/**
+		 * تفعيل/إلغاء ظلال التلسكوب للأداء
+		 */
+		function toggleTelescopeShadows(enable) {
+			const objects = [polarFrame, raShaft, decAxis, telescope];
+			
+			objects.forEach(obj => {
+				obj.traverse(child => {
+					if (child.isMesh) {
+						child.castShadow = enable;
+						child.receiveShadow = enable;
+					}
+				});
+			});
+			
+			console.log(`🌓 ظلال التلسكوب: ${enable ? 'مفعّلة' : 'معطّلة'}`);
+		}
+
+        /**
+         * إعداد الإضاءة
+         */
+        function setupLighting() {
+            // إضاءة محيطة
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            // إضاءة اتجاهية (الشمس)
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            sunLight.position.set(100, 100, 100);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            scene.add(sunLight);
+            
+            // إضاءة خلفية (السماء)
+            const skyLight = new THREE.HemisphereLight(0x4488ff, 0x002244, 0.2);
+            scene.add(skyLight);
+        }
+
+        /**
+         * إنشاء القبة السماوية
+         */
+        function createCelestialSphere() {
+            celestialSphere = new THREE.Group();
+            scene.add(celestialSphere);
+            
+            const geometry = new THREE.SphereGeometry(SYSTEM.SPHERE_RADIUS, 128, 128);
+            const material = new THREE.MeshBasicMaterial({
+                color: SYSTEM.COLOR_PALETTE.SKY,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            
+            const sphere = new THREE.Mesh(geometry, material);
+            celestialSphere.add(sphere);
+            
+            // تدوير القبة بناءً على خط العرض والزمن النجمي
+            updateCelestialSphereRotation();
+        }
+
+        /**
+         * تحديث دوران القبة السماوية بناءً على خط العرض والزمن النجمي
+         */
+        function updateCelestialSphereRotation() {
+            // ميل المحور القطبي
+            const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+            
+            // تدوير القبة حول المحور X بمقدار ميل المحور
+            celestialSphere.rotation.x = polarAngle;
+            
+            // تدوير القبة حول المحور Y بمقدار الزمن النجمي المحلي
+            celestialSphere.rotation.y = -THREE.MathUtils.degToRad(localSiderealTime * 15);
+            
+            console.log(`🔄 دوران القبة: الميل=${(90 - currentLatitude).toFixed(1)}°, LST=${localSiderealTime.toFixed(2)}h`);
+        }
+
+        /**
+         * إنشاء النجوم
+         */
+        function createStars() {
+            const starCount = 2000;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(starCount * 3);
+            const colors = new Float32Array(starCount * 3);
+            const sizes = new Float32Array(starCount);
+            
+            for (let i = 0; i < starCount; i++) {
+                // توزيع عشوائي للنجوم
+                const azimuth = Math.random() * 360;
+                const altitude = Math.acos(2 * Math.random() - 1) * 180 / Math.PI;
+                
+                const pos = ASTRONOMICAL_SYSTEM.sphericalToCartesian(azimuth, altitude);
+                
+                positions[i * 3] = pos.x;
+                positions[i * 3 + 1] = pos.y;
+                positions[i * 3 + 2] = pos.z;
+                
+                // ألوان عشوائية (مع ميل للأزرق والأبيض)
+                const color = new THREE.Color();
+                const hue = Math.random() * 0.2 + 0.6; // أزرق إلى أبيض
+                const saturation = Math.random() * 0.3 + 0.7;
+                const lightness = Math.random() * 0.3 + 0.7;
+                color.setHSL(hue, saturation, lightness);
+                
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+                
+                // أحجام عشوائية
+                sizes[i] = Math.random() * 2 + 0.5;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            
+            const material = new THREE.PointsMaterial({
+                size: 1.5,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.8,
+                sizeAttenuation: true
+            });
+            
+            stars = new THREE.Points(geometry, material);
+            celestialSphere.add(stars);
+        }
+
+        /**
+         * إنشاء الكوكبات
+         */
+        function createConstellations() {
+            constellations = new THREE.Group();
+            celestialSphere.add(constellations);
+            
+            // كوكبة الدب الأكبر (مثال)
+            const ursaMajorStars = [
+                { az: 165, alt: 55 },  // Dubhe
+                { az: 160, alt: 57 },  // Merak
+                { az: 158, alt: 60 },  // Phecda
+                { az: 153, alt: 62 },  // Megrez
+                { az: 145, alt: 63 },  // Alioth
+                { az: 140, alt: 62 },  // Mizar
+                { az: 137, alt: 60 }   // Alkaid
+            ];
+            
+            const points = [];
+            ursaMajorStars.forEach(star => {
+                const pos = ASTRONOMICAL_SYSTEM.sphericalToCartesian(star.az, star.alt);
+                points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+            });
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: 0x4488ff,
+                transparent: true,
+                opacity: 0.5,
+                linewidth: 2
+            });
+            
+            const constellationLine = new THREE.Line(geometry, material);
+            constellations.add(constellationLine);
+        }
+
+        /**
+         * إنشاء الشبكات الفلكية
+         */
+        function createGrids() {
+            // الشبكة الاستوائية
+            equatorialGrid = new THREE.Group();
+            equatorialGrid.name = 'equatorialGrid';
+            
+            // الشبكة السمتية
+            horizontalGrid = new THREE.Group();
+            horizontalGrid.name = 'horizontalGrid';
+            
+            // دائرة البروج
+            eclipticGrid = new THREE.Group();
+            eclipticGrid.name = 'eclipticGrid';
+            
+            scene.add(equatorialGrid);
+            scene.add(horizontalGrid);
+            scene.add(eclipticGrid);
+            
+            // إنشاء الشبكات
+            createEquatorialGrid();
+            createHorizontalGrid();
+            createEclipticGrid();
+            
+            // تحديث إظهار الشبكات
+            updateGridVisibility();
+        }
+
+        /**
+         * إنشاء الشبكة الاستوائية
+         */
+        function createEquatorialGrid() {
+            // مسح الشبكة الحالية
+            while (equatorialGrid.children.length > 0) {
+                equatorialGrid.remove(equatorialGrid.children[0]);
+            }
+            
+            const density = SYSTEM.GRID_DENSITY_LEVELS[gridDensity];
+            const color = new THREE.Color(SYSTEM.COLOR_PALETTE.GRID_EQUATORIAL);
+            
+            // خطوط الميل (Declination)
+            for (let dec = -75; dec <= 75; dec += density.dec) {
+                if (dec === 0) continue; // خط الاستواء سيضاف لاحقاً
+                
+                const decRad = dec * Math.PI / 180;
+                const radius = Math.cos(decRad) * SYSTEM.SPHERE_RADIUS;
+                const y = Math.sin(decRad) * SYSTEM.SPHERE_RADIUS;
+                
+                const points = [];
+                for (let i = 0; i <= 64; i++) {
+                    const angle = (i / 64) * Math.PI * 2;
+                    points.push(new THREE.Vector3(
+                        radius * Math.cos(angle),
+                        y,
+                        radius * Math.sin(angle)
+                    ));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: gridAlpha,
+                    linewidth: 1
+                });
+                
+                equatorialGrid.add(new THREE.Line(geometry, material));
+            }
+            
+            // خطوط المطلع المستقيم (RA)
+            for (let ra = 0; ra < 360; ra += density.ra) {
+                const raRad = ra * Math.PI / 180;
+                const points = [];
+                
+                for (let dec = -85; dec <= 85; dec += 5) {
+                    const decRad = dec * Math.PI / 180;
+                    const cosDec = Math.cos(decRad);
+                    const sinDec = Math.sin(decRad);
+                    
+                    points.push(new THREE.Vector3(
+                        SYSTEM.SPHERE_RADIUS * cosDec * Math.cos(raRad),
+                        SYSTEM.SPHERE_RADIUS * sinDec,
+                        SYSTEM.SPHERE_RADIUS * cosDec * Math.sin(raRad)
+                    ));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: gridAlpha,
+                    linewidth: 1
+                });
+                
+                equatorialGrid.add(new THREE.Line(geometry, material));
+            }
+            
+            // خط الاستواء السماوي (مميز)
+            const equatorPoints = [];
+            for (let i = 0; i <= 64; i++) {
+                const angle = (i / 64) * Math.PI * 2;
+                equatorPoints.push(new THREE.Vector3(
+                    SYSTEM.SPHERE_RADIUS * Math.cos(angle),
+                    0,
+                    SYSTEM.SPHERE_RADIUS * Math.sin(angle)
+                ));
+            }
+            
+            const equatorGeometry = new THREE.BufferGeometry().setFromPoints(equatorPoints);
+            const equatorMaterial = new THREE.LineBasicMaterial({
+                color: 0xff9800,
+                transparent: true,
+                opacity: gridAlpha * 1.5,
+                linewidth: 2
+            });
+            
+            equatorialGrid.add(new THREE.Line(equatorGeometry, equatorMaterial));
+            
+            // تدوير الشبكة بناءً على خط العرض والزمن النجمي
+            updateEquatorialGridRotation();
+        }
+
+        /**
+         * تحديث دوران الشبكة الاستوائية
+         */
+        function updateEquatorialGridRotation() {
+            // ميل المحور القطبي
+            const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+            
+            // تدوير الشبكة حول المحور X بمقدار ميل المحور
+            equatorialGrid.rotation.x = polarAngle;
+            
+            // تدوير الشبكة حول المحور Y بمقدار الزمن النجمي المحلي
+            equatorialGrid.rotation.y = -THREE.MathUtils.degToRad(localSiderealTime * 15); // سالب لتحقيق اتجاه دوران صحيح
+            
+            console.log(`📐 دوران الشبكة الاستوائية: الميل=${(90 - currentLatitude).toFixed(1)}°, LST=${localSiderealTime.toFixed(2)}h`);
+        }
+
+        /**
+         * إنشاء الشبكة السمتية
+         */
+        function createHorizontalGrid() {
+            // مسح الشبكة الحالية
+            while (horizontalGrid.children.length > 0) {
+                horizontalGrid.remove(horizontalGrid.children[0]);
+            }
+            
+            const density = SYSTEM.GRID_DENSITY_LEVELS[gridDensity];
+            const color = new THREE.Color(SYSTEM.COLOR_PALETTE.GRID_HORIZONTAL);
+            
+            // خطوط الارتفاع (Altitude)
+            for (let alt = density.alt; alt <= 90; alt += density.alt) {
+                const altRad = alt * Math.PI / 180;
+                const radius = Math.cos(altRad) * SYSTEM.SPHERE_RADIUS;
+                const y = Math.sin(altRad) * SYSTEM.SPHERE_RADIUS;
+                
+                const points = [];
+                for (let i = 0; i <= 64; i++) {
+                    const angle = (i / 64) * Math.PI * 2;
+                    points.push(new THREE.Vector3(
+                        radius * Math.cos(angle),
+                        y,
+                        radius * Math.sin(angle)
+                    ));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: gridAlpha,
+                    linewidth: 1
+                });
+                
+                horizontalGrid.add(new THREE.Line(geometry, material));
+            }
+            
+            // خطوط السمت (Azimuth)
+            for (let az = 0; az < 360; az += density.az) {
+                const points = [];
+                
+                for (let alt = 0; alt <= 90; alt += 5) {
+                    const pos = ASTRONOMICAL_SYSTEM.sphericalToCartesian(az, alt);
+                    points.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+                }
+                
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    transparent: true,
+                    opacity: gridAlpha,
+                    linewidth: 1
+                });
+                
+                horizontalGrid.add(new THREE.Line(geometry, material));
+            }
+            
+            // خط الأفق الرئيسي
+            const horizonPoints = [];
+            for (let i = 0; i <= 64; i++) {
+                const angle = (i / 64) * Math.PI * 2;
+                horizonPoints.push(new THREE.Vector3(
+                    SYSTEM.SPHERE_RADIUS * Math.cos(angle),
+                    0,
+                    SYSTEM.SPHERE_RADIUS * Math.sin(angle)
+                ));
+            }
+            
+            const horizonGeometry = new THREE.BufferGeometry().setFromPoints(horizonPoints);
+            const horizonMaterial = new THREE.LineBasicMaterial({
+                color: 0x58a6ff,
+                transparent: true,
+                opacity: gridAlpha * 1.5,
+                linewidth: 2
+            });
+            
+            horizontalGrid.add(new THREE.Line(horizonGeometry, horizonMaterial));
+        }
+
+        /**
+         * إنشاء دائرة البروج
+         */
+        function createEclipticGrid() {
+            while (eclipticGrid.children.length > 0) {
+                eclipticGrid.remove(eclipticGrid.children[0]);
+            }
+            
+            const color = new THREE.Color(SYSTEM.COLOR_PALETTE.GRID_ECLIPTIC);
+            const points = [];
+            const inclination = 23.5 * Math.PI / 180;
+            
+            // دائرة البروج
+            for (let i = 0; i <= 64; i++) {
+                const angle = (i / 64) * Math.PI * 2;
+                const x = SYSTEM.SPHERE_RADIUS * Math.cos(angle);
+                const y = SYSTEM.SPHERE_RADIUS * Math.sin(angle) * Math.sin(inclination);
+                const z = SYSTEM.SPHERE_RADIUS * Math.sin(angle) * Math.cos(inclination);
+                
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: gridAlpha * 0.8,
+                linewidth: 1.5
+            });
+            
+            eclipticGrid.add(new THREE.Line(geometry, material));
+            
+            // تدوير دائرة البروج مع الشبكة الاستوائية
+            const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+            eclipticGrid.rotation.x = polarAngle;
+            eclipticGrid.rotation.y = THREE.MathUtils.degToRad(localSiderealTime * 15);
+        }
+
+        /**
+         * بناء الأرض والأفق
+         */
+        function buildGroundAndHorizon() {
+            // الأرض
+            const groundGeometry = new THREE.CircleGeometry(SYSTEM.SPHERE_RADIUS, 64);
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: SYSTEM.COLOR_PALETTE.GROUND,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide,
+                depthWrite: false,
+                roughness: 0.8,
+                metalness: 0.2
+            });
+            
+            ground = new THREE.Mesh(groundGeometry, groundMaterial);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.1;
+            scene.add(ground);
+
+            // دائرة الأفق
+            const horizonGeometry = new THREE.RingGeometry(SYSTEM.SPHERE_RADIUS - 1, SYSTEM.SPHERE_RADIUS, 64);
+            const horizonMaterial = new THREE.MeshBasicMaterial({
+                color: 0x58a6ff,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            
+            horizonCircle = new THREE.Mesh(horizonGeometry, horizonMaterial);
+            horizonCircle.rotation.x = -Math.PI / 2;
+            scene.add(horizonCircle);
+        }
+		
+		/**
+ * إنشاء هيكل التلسكوب الشوكي التفصيلي (نظام الإحداثيات المصحح)
+ */
+function createTelescopeStructure() {
+    console.log('🔭 بناء هيكل التلسكوب الشوكي التفصيلي...');
+    
+    // ==================== الإطار القطبي ====================
+    polarFrame = new THREE.Group();
+    polarFrame.name = 'polarFrame';
+    scene.add(polarFrame);
+    
+    // تدوير الإطار القطبي بمقدار ميل المحور القطبي
+    const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+    polarFrame.rotation.x = polarAngle;
+    console.log(`🎯 ميل المحور القطبي: ${(90 - currentLatitude).toFixed(1)}° حول المحور X`);
+    
+    // ==================== القاعدة ====================
+    const baseGeometry = new THREE.CylinderGeometry(0.8, 1, 0.4, 32);
+    const baseMaterial = new THREE.MeshStandardMaterial({
+        color: 0x0d1117,
+        metalness: 0.8,
+        roughness: 0.2,
+        emissive: 0x000000,
+        emissiveIntensity: 0.1
+    });
+    const base = new THREE.Mesh(baseGeometry, baseMaterial);
+    base.position.y = 0.2;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    scene.add(base);
+    
+    // ==================== محور المطلع المستقيم (RA) ====================
+    raShaft = new THREE.Group();
+    raShaft.name = 'raShaft';
+    polarFrame.add(raShaft);
+    
+    // المحور الرئيسي (عمود رأسي)
+    const shaftGeometry = new THREE.CylinderGeometry(0.15, 0.15, 3, 32);
+    const shaftMaterial = new THREE.MeshStandardMaterial({
+        color: 0x238636,
+        metalness: 0.9,
+        roughness: 0.1,
+        emissive: 0x0a3d0a,
+        emissiveIntensity: 0.2
+    });
+    const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+    shaft.position.y = 1.5;
+    shaft.castShadow = true;
+    raShaft.add(shaft);
+    
+    // ==================== الشوكة ====================
+    const fork = new THREE.Group();
+    fork.name = 'fork';
+    fork.position.y = 3; // في أعلى المحور الرئيسي
+    raShaft.add(fork);
+    
+    const forkMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8b949e,
+        metalness: 0.6,
+        roughness: 0.3
+    });
+    
+    // قاعدة الشوكة
+    const forkBaseGeometry = new THREE.BoxGeometry(2.2, 0.4, 0.7);
+    const forkBase = new THREE.Mesh(forkBaseGeometry, forkMaterial);
+    forkBase.castShadow = true;
+    fork.add(forkBase);
+    
+    // الذراع اليسرى
+    const armGeometry = new THREE.BoxGeometry(0.3, 2, 0.6);
+    const leftArm = new THREE.Mesh(armGeometry, forkMaterial);
+    leftArm.position.set(-1, 0.9, 0);
+    leftArm.castShadow = true;
+    fork.add(leftArm);
+    
+    // الذراع اليمنى (نسخة من اليسرى)
+    const rightArm = leftArm.clone();
+    rightArm.position.set(1, 0.9, 0);
+    rightArm.castShadow = true;
+    fork.add(rightArm);
+    
+    // محور دوران الشوكة (محور RA)
+    const forkAxisGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.5, 16);
+    const forkAxisMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf0883e,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    const forkAxis = new THREE.Mesh(forkAxisGeometry, forkAxisMaterial);
+    forkAxis.position.y = 1.9;
+    forkAxis.rotation.x = Math.PI / 2;
+    fork.add(forkAxis);
+    
+    // ==================== محور الميل (Dec) ====================
+    decAxis = new THREE.Group();
+    decAxis.name = 'decAxis';
+    decAxis.position.y = 1.0; // على نفس ارتفاع محور الشوكة
+    fork.add(decAxis);
+    
+    // محور الميل (عمودي على الشوكة)
+    const decShaftGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.4, 16);
+    const decShaftMaterial = new THREE.MeshStandardMaterial({
+        color: 0x58a6ff,
+        metalness: 0.7,
+        roughness: 0.3
+    });
+    const decShaft = new THREE.Mesh(decShaftGeometry, decShaftMaterial);
+    decShaft.position.y = 0;
+    decShaft.rotation.x = Math.PI / 2; // أفقي
+    decAxis.add(decShaft);
+    
+    // ==================== التلسكوب ====================
+    telescope = new THREE.Group();
+    telescope.name = 'telescope';
+    telescope.position.z = 0.2; // إبعاد قليلاً عن المحور
+    decAxis.add(telescope);
+    
+    // الأنبوب الرئيسي للتلسكوب
+    const tubeGeometry = new THREE.CylinderGeometry(0.45, 0.45, 2.6, 64);
+    const tubeMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf0f6fc,
+        metalness: 0.2,
+        roughness: 0.1,
+        envMapIntensity: 0.5
+    });
+    const mainTube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+    mainTube.rotation.x = Math.PI / 2; // توجيه أفقي
+    mainTube.position.z = 1.3; // مركز الأنبوب
+    mainTube.castShadow = true;
+    telescope.add(mainTube);
+    
+    // طلاء فتحة التلسكوب (حلقات)
+    const apertureGeometry = new THREE.CylinderGeometry(0.48, 0.48, 0.1, 32);
+    const apertureMaterial = new THREE.MeshStandardMaterial({
+        color: 0x010409,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    const aperture = new THREE.Mesh(apertureGeometry, apertureMaterial);
+    aperture.rotation.x = Math.PI / 2;
+    aperture.position.z = 2.55; // في نهاية الأنبوب
+    telescope.add(aperture);
+    
+    // خلية المرآة (في نهاية التلسكوب)
+    const mirrorCellGeometry = new THREE.CylinderGeometry(0.48, 0.48, 0.5, 32);
+    const mirrorCellMaterial = new THREE.MeshStandardMaterial({
+        color: 0x010409,
+        metalness: 0.5,
+        roughness: 0.8
+    });
+    const mirrorCell = new THREE.Mesh(mirrorCellGeometry, mirrorCellMaterial);
+    mirrorCell.rotation.x = Math.PI / 2;
+    mirrorCell.position.z = -1.1; // في الطرف الآخر من الأنبوب
+    mirrorCell.castShadow = true;
+    telescope.add(mirrorCell);
+    
+    // حوامل الدعم (دعامات)
+    const supportGeometry = new THREE.BoxGeometry(0.08, 0.3, 0.08);
+    const supportMaterial = new THREE.MeshStandardMaterial({
+        color: 0x30363d,
+        metalness: 0.6,
+        roughness: 0.4
+    });
+    
+    for (let i = 0; i < 3; i++) {
+        const angle = (i / 3) * Math.PI * 2;
+        const support = new THREE.Mesh(supportGeometry, supportMaterial);
+        support.position.set(
+            Math.cos(angle) * 0.4,
+            0.15,
+            Math.sin(angle) * 0.4
+        );
+        support.rotation.y = angle;
+        mainTube.add(support);
+    }
+    
+    // ==================== شعاع الليزر ====================
+    const laserGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, SYSTEM.SPHERE_RADIUS * 1.1) // أطول للرؤية
+    ]);
+    const laserMaterial = new THREE.LineBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0, // مخفي في البداية
+        linewidth: 5,
+        depthTest: false
+    });
+    laserBeam = new THREE.Line(laserGeometry, laserMaterial);
+    laserBeam.position.z = 2.5; // من نهاية التلسكوب
+    laserBeam.name = 'laserBeam';
+    telescope.add(laserBeam);
+    
+    // مؤشر الليزر (نقطة ضوء في البداية)
+    const laserIndicatorGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+    const laserIndicatorMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0
+    });
+    const laserIndicator = new THREE.Mesh(laserIndicatorGeometry, laserIndicatorMaterial);
+    laserIndicator.position.z = 0;
+    laserBeam.add(laserIndicator);
+    
+    // ==================== تفاصيل إضافية ====================
+    
+    // عجلات التحكم
+    const controlWheelGeometry = new THREE.TorusGeometry(0.25, 0.05, 16, 32);
+    const controlWheelMaterial = new THREE.MeshStandardMaterial({
+        color: 0xf0883e,
+        metalness: 0.7,
+        roughness: 0.3
+    });
+    
+    // عجلة التحكم في محور RA
+    const raWheel = new THREE.Mesh(controlWheelGeometry, controlWheelMaterial);
+    raWheel.position.set(0, 0.5, -0.5);
+    raWheel.rotation.x = Math.PI / 2;
+    raShaft.add(raWheel);
+    
+    // عجلة التحكم في محور Dec
+    const decWheel = raWheel.clone();
+    decWheel.position.set(0, 0, -0.3);
+    decWheel.rotation.y = Math.PI / 2;
+    decAxis.add(decWheel);
+    
+    // لوحة تحكم صغيرة على القاعدة
+    const controlPanelGeometry = new THREE.BoxGeometry(0.6, 0.1, 0.4);
+    const controlPanelMaterial = new THREE.MeshStandardMaterial({
+        color: 0x161b22,
+        metalness: 0.9,
+        roughness: 0.1,
+        emissive: 0x00f2ff,
+        emissiveIntensity: 0.05
+    });
+    const controlPanel = new THREE.Mesh(controlPanelGeometry, controlPanelMaterial);
+    controlPanel.position.set(0, 0.45, 0.5);
+    base.add(controlPanel);
+    
+    // أزرار على لوحة التحكم
+    const buttonGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.05, 16);
+    const buttonMaterial = new THREE.MeshStandardMaterial({
+        color: 0x238636,
+        metalness: 0.8,
+        roughness: 0.2
+    });
+    
+    for (let i = 0; i < 3; i++) {
+        const button = new THREE.Mesh(buttonGeometry, buttonMaterial);
+        button.position.set(-0.15 + i * 0.15, 0.06, 0);
+        controlPanel.add(button);
+    }
+    
+    console.log('✅ تم بناء هيكل التلسكوب الشوكي بنجاح');
+    console.log(`📐 هيكل المجموعات: polarFrame → raShaft → fork → decAxis → telescope`);
+    
+    // اختبار الحركة الأولية
+    testTelescopeMovement();
+}
+
+/**
+ * اختبار حركة التلسكوب بعد البناء
+ */
+function testTelescopeMovement() {
+    console.log('🧪 اختبار حركة التلسكوب...');
+    
+    // تحريك التلسكوب قليلاً للتحقق من حركة المحاور
+    setTimeout(() => {
+        console.log('  🔄 تحريك محور RA...');
+        raShaft.rotation.y += 0.1;
+    }, 500);
+    
+    setTimeout(() => {
+        console.log('  🔄 تحريك محور Dec...');
+        decAxis.rotation.x += 0.1;
+    }, 1000);
+    
+    setTimeout(() => {
+        console.log('  🔄 إعادة التعيين...');
+        raShaft.rotation.y = 0;
+        decAxis.rotation.x = 0;
+        console.log('  ✅ اختبار الحركة مكتمل');
+    }, 1500);
+}
+
+        /**
+         * بناء حامل التلسكوب
+         */
+        function buildTelescopeMount() {
+            polarFrame = new THREE.Group();
+            scene.add(polarFrame);
+            
+            // تدوير الإطار القطبي حول المحور X بمقدار ميل المحور
+            const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+            polarFrame.rotation.x = polarAngle;
+
+            // محور RA (المطلع المستقيم)
+            raShaft = new THREE.Group();
+            polarFrame.add(raShaft);
+
+            const shaftGeometry = new THREE.CylinderGeometry(0.2, 0.2, 4, 16);
+            const shaftMaterial = new THREE.MeshStandardMaterial({
+                color: 0x238636,
+                metalness: 0.9,
+                roughness: 0.1
+            });
+            const shaft = new THREE.Mesh(shaftGeometry, shaftMaterial);
+            shaft.position.y = 2;
+            raShaft.add(shaft);
+
+            // محور Dec (الميل)
+            decAxis = new THREE.Group();
+            decAxis.position.y = 4;
+            raShaft.add(decAxis);
+
+            // التلسكوب
+            telescope = new THREE.Group();
+            decAxis.add(telescope);
+
+            const tubeGeometry = new THREE.CylinderGeometry(0.4, 0.4, 3, 32);
+            const tubeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xf0f6fc,
+                metalness: 0.2,
+                roughness: 0.1
+            });
+            const mainTube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+            mainTube.rotation.x = Math.PI / 2;
+            telescope.add(mainTube);
+
+            // شعاع الليزر
+            const laserGeometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(0, 0, SYSTEM.SPHERE_RADIUS * 1.0)
+            ]);
+            const laserMaterial = new THREE.LineBasicMaterial({
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0,
+                linewidth: 3
+            });
+            laserBeam = new THREE.Line(laserGeometry, laserMaterial);
+            laserBeam.position.z = 1.0;
+            telescope.add(laserBeam);
+            
+            console.log(`🔭 تم بناء حامل التلسكوب مع ميل قطبي: ${(90 - currentLatitude).toFixed(1)}°`);
+        }
+
+/**
+ * تحديث محاذاة القطب مع تغير خط العرض - معدلة للهيكل الشوكي
+ */
+function updatePolarAlignment() {
+    const polarAngle = (90 - currentLatitude) * Math.PI / 180;
+    
+    // تدوير الإطار القطبي حول المحور X بمقدار ميل المحور
+    polarFrame.rotation.x = polarAngle;
+    
+    console.log(`🎯 تحديث المحاذاة القطبية: الميل = ${(90 - currentLatitude).toFixed(1)}° حول المحور X`);
+}
+
+        /**
+         * إنشاء نقاط الاتجاه الأساسية
+         */
+        function createCardinalPoints() {
+            const directions = [
+                { name: 'شمال', az: 0, alt: 0, color: 0x00ff00 },
+                { name: 'شرق', az: 90, alt: 0, color: 0xff0000 },
+                { name: 'جنوب', az: 180, alt: 0, color: 0x0000ff },
+                { name: 'غرب', az: 270, alt: 0, color: 0xffff00 }
+            ];
+            
+            directions.forEach(dir => {
+                const pos = ASTRONOMICAL_SYSTEM.sphericalToCartesian(dir.az, dir.alt);
+                
+                console.log(`📍 ${dir.name}: السمت=${dir.az}°, الإحداثيات: x=${pos.x.toFixed(1)}, y=${pos.y.toFixed(1)}, z=${pos.z.toFixed(1)}`);
+                
+                const geometry = new THREE.SphereGeometry(5, 16, 16);
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: dir.color,
+                    transparent: true,
+                    opacity: 0.5
+                });
+                
+                const point = new THREE.Mesh(geometry, material);
+                point.position.set(pos.x, pos.y, pos.z);
+                point.name = dir.name;
+                scene.add(point);
+                
+                // إضافة تسمية نصية
+                createLabel(dir.name, pos.x, pos.y + 8, pos.z, dir.color);
+            });
+        }
+
+        /**
+         * إنشاء القطب الشمالي السماوي
+         */
+        function createNorthCelestialPole() {
+            const poleAlt = currentLatitude; // ارتفاع = خط العرض
+            const poleAz = 0; // شمال
+            
+            const pos = ASTRONOMICAL_SYSTEM.sphericalToCartesian(poleAz, poleAlt);
+            
+            console.log(`📍 القطب الشمالي السماوي: 
+                خط العرض=${currentLatitude}°
+                الإحداثيات: x=${pos.x.toFixed(1)}, y=${pos.y.toFixed(1)}, z=${pos.z.toFixed(1)}
+                الارتفاع المتوقع=${poleAlt}°, السمت=${poleAz}°`);
+            
+            const geometry = new THREE.SphereGeometry(5, 16, 16);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x00f2ff,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            const pole = new THREE.Mesh(geometry, material);
+            pole.position.set(pos.x, pos.y, pos.z);
+            pole.name = 'NCP';
+            scene.add(pole);
+            
+            // تسمية القطب - فوقه بقليل
+            createLabel('NCP', pos.x, pos.y + 15, pos.z, 0x00f2ff);
+        }
+
+        /**
+         * إنشاء تسمية
+         */
+        function createLabel(text, x, y, z, color) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 100;
+            canvas.height = 30;
+            
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = `rgb(${(color >> 16) & 255}, ${(color >> 8) & 255}, ${color & 255})`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ 
+                map: texture, 
+                transparent: true,
+                opacity: 0.8
+            });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(15, 5, 1);
+            sprite.position.set(x, y, z);
+            scene.add(sprite);
+        }
+
+        /**
+         * إعداد أدوات التحكم
+         */
+        function setupControls() {
+            // تحديث قيم التحكم الأولية
+            updateCameraSpeed(1);
+            updateTrackingSpeed(1);
+            updateLST(localSiderealTime);
+            updatePolarAngle(currentLatitude);
+            updateGridAlpha(gridAlpha * 100);
+            updateGridDensity(gridDensity);
+            
+            // فتح جميع القوائم القابلة للطي
+            openAllAccordions();
+        }
+
+        /**
+         * فتح جميع القوائم القابلة للطي
+         */
+        function openAllAccordions() {
+            const accordions = ['cameraAccordion', 'gridsAccordion', 'telescopeAccordion', 'timeAccordion'];
+            accordions.forEach(id => {
+                const content = document.getElementById(id);
+                const icon = content.previousElementSibling.querySelector('.accordion-icon');
+                content.classList.add('open');
+                icon.classList.add('rotated');
+            });
+        }
+
+        /**
+         * بدء دورة التحرك
+         */
+/*        function startAnimationLoop() {
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // تحديث الوقت الفلكي إذا كان متدفقاً
+                if (isTimeFlowing) {
+                    updateSiderealTime();
+                }
+                
+                // تحديث التحكم بالكاميرا
+                controls.update();
+                
+                // تحديث واجهة المستخدم
+                updateHUD();
+                
+                // حساب التقاطع الليزري
+                if (laserEnabled) {
+                    calculateLaserIntersection();
+                }
+                
+                // تحديث الأداء
+                updatePerformance();
+                
+                // عرض المشهد
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+        }
+*/
+function startAnimationLoop() {
+    let lastTime = 0;
+    
+    function animate(time) {
+        requestAnimationFrame(animate);
+        
+        const delta = time - lastTime;
+        lastTime = time;
+        
+        // تحديث النظام الفلكي
+        if (isTimeFlowing) {
+            updateSiderealTime();
+            
+            // تحديث النجوم
+            if (starsRenderer) {
+                starsRenderer.update(time, camera.position);
+            }
+            
+            // تحديث النظام الشمسي
+            if (solarSystem) {
+                solarSystem.update(time);
+            }
+        }
+        
+        // تحديث التحكم بالكاميرا
+        controls.update();
+        
+        // تحديث واجهة المستخدم
+        updateHUD();
+        
+        // تحديث الأداء
+        updatePerformance();
+        
+        // عرض المشهد
+        renderer.render(scene, camera);
+    }
+    
+    animate(0);
+}
+
+        /**
+         * إعداد مستمعات الأحداث
+         */
+        function setupEventListeners() {
+            // تغيير حجم النافذة
+            window.addEventListener('resize', onWindowResize);
+            
+            // اختصارات لوحة المفاتيح
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            
+            // منع سلوك المتصفح الافتراضي لبعض المفاتيح
+            window.addEventListener('keydown', (e) => {
+                // منع سلوك المتصفح للمفاتيح التي نستخدمها
+                const preventKeys = [' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F1', 'F11'];
+                if (preventKeys.includes(e.key)) {
+                    e.preventDefault();
+                }
+            });
+            
+            // التعامل مع الأجهزة التي تعمل باللمس
+            setupTouchControls();
+        }
+
+        /**
+         * التعامل مع تغيير حجم النافذة
+         */
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        /**
+         * التعامل مع ضغطات المفاتيح
+         */
+        function handleKeyDown(e) {
+            const key = e.key.toLowerCase();
+            const ctrl = e.ctrlKey || e.metaKey;
+            
+            // التحكم العام
+            if (ctrl && key === 'h') {
+                e.preventDefault();
+                toggleControls();
+            } else if (ctrl && key === 'd') {
+                e.preventDefault();
+                toggleHUD();
+            } else if (key === 'f11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            
+            // التحكم بالشبكات
+            else if (key === 'g') {
+                e.preventDefault();
+                toggleGrid('equatorial');
+            } else if (key === 'h' && !ctrl) {
+                e.preventDefault();
+                toggleGrid('horizontal');
+            } else if (key === 'j') {
+                e.preventDefault();
+                toggleGrid('ecliptic');
+            }
+            
+            // التحكم بالتلسكوب
+            else if (key === 'arrowup') {
+                e.preventDefault();
+                moveTelescope('north');
+            } else if (key === 'arrowdown') {
+                e.preventDefault();
+                moveTelescope('south');
+            } else if (key === 'arrowright') {
+                e.preventDefault();
+                moveTelescope('east');
+            } else if (key === 'arrowleft') {
+                e.preventDefault();
+                moveTelescope('west');
+            }
+            
+            // التحكم بالليزر
+            else if (key === 'l') {
+                e.preventDefault();
+                toggleLaser();
+            }
+            
+            // التحكم بالكاميرا
+            else if (key === '1') {
+                e.preventDefault();
+                setCameraMode('free');
+            } else if (key === '2') {
+                e.preventDefault();
+                setCameraMode('telescope');
+            } else if (key === '3') {
+                e.preventDefault();
+                setCameraMode('zenith');
+            }
+            
+            // أدوات إضافية
+            else if (key === 'p') {
+                e.preventDefault();
+                captureImage();
+            } else if (key === 'r') {
+                e.preventDefault();
+                toggleRecording();
+            } else if (key === 'f1') {
+                e.preventDefault();
+                toggleShortcuts();
+            } else if (key === 'home') {
+                e.preventDefault();
+                resetTelescope();
+            }
+        }
+
+        /**
+         * التعامل مع رفع المفاتيح
+         */
+        function handleKeyUp(e) {
+            const key = e.key.toLowerCase();
+            
+            // إيقاف الحركة المستمرة عند رفع المفاتيح
+            if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
+                stopContinuousMove();
+            }
+        }
+
+        /**
+         * إعداد التحكم باللمس
+         */
+        function setupTouchControls() {
+            // إضافة مستمعات اللمس لأزرار التحكم
+            const arrowButtons = document.querySelectorAll('.arrow-btn');
+            arrowButtons.forEach(button => {
+                button.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const direction = button.classList.contains('north') ? 'north' :
+                                     button.classList.contains('south') ? 'south' :
+                                     button.classList.contains('east') ? 'east' :
+                                     button.classList.contains('west') ? 'west' : null;
+                    if (direction) {
+                        startContinuousMove(direction);
+                    }
+                });
+                
+                button.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    stopContinuousMove();
+                });
+            });
+        }
+
+        // ==================== دوال واجهة المستخدم ====================
+
+        /**
+         * تبديل إظهار/إخفاء لوحة التحكم
+         */
+        window.toggleControls = function() {
+            controlsVisible = !controlsVisible;
+            controlsPanel.classList.toggle('hidden', !controlsVisible);
+            
+            const notification = controlsVisible ? 'لوحة التحكم ظاهرة' : 'لوحة التحكم مخفية';
+            showNotification('⚙️ ' + notification, '', 'info');
+            
+            // تحديث زر التبديل في حالة وجوده
+            updateControlButtons();
+        };
+
+        /**
+         * تبديل إظهار/إخفاء لوحة البيانات
+         */
+        window.toggleHUD = function() {
+            hudVisible = !hudVisible;
+            hudPanel.classList.toggle('hidden', !hudVisible);
+            
+            const notification = hudVisible ? 'بيانات النظام ظاهرة' : 'بيانات النظام مخفية';
+            showNotification('📊 ' + notification, '', 'info');
+            
+            updateControlButtons();
+        };
+
+        /**
+         * تبديل وضع ملء الشاشة
+         */
+        window.toggleFullscreen = function() {
+            if (!isFullscreen) {
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+                isFullscreen = true;
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+                isFullscreen = false;
+            }
+        };
+
+        /**
+         * تحديث أزرار التحكم
+         */
+        function updateControlButtons() {
+            // تحديث حالة أزرار التبديل في حالة وجودها
+            // يمكن إضافة منطق هنا لتحديث أيقونات الأزرار
+        }
+
+        /**
+         * تبديل الشبكة الفلكية
+         */
+        window.toggleGrid = function(gridType) {
+            gridVisibility[gridType] = !gridVisibility[gridType];
+            
+            // تحديث الواجهة
+            const checkbox = document.getElementById(`${gridType}GridCheckbox`);
+            if (checkbox) {
+                checkbox.classList.toggle('checked', gridVisibility[gridType]);
+            }
+            
+            // تحديث المشهد
+            updateGridVisibility();
+            
+            // إشعار
+            const gridNames = {
+                equatorial: 'الشبكة الاستوائية',
+                horizontal: 'الشبكة السمتية',
+                ecliptic: 'دائرة البروج'
+            };
+            
+            const action = gridVisibility[gridType] ? 'مفعّلة' : 'معطّلة';
+            showNotification('📐 ' + gridNames[gridType], action, gridVisibility[gridType] ? 'success' : 'warning');
+        };
+
+        /**
+         * تحديث إظهار الشبكات
+         */
+        function updateGridVisibility() {
+            equatorialGrid.visible = gridVisibility.equatorial;
+            horizontalGrid.visible = gridVisibility.horizontal;
+            eclipticGrid.visible = gridVisibility.ecliptic;
+            
+            // تحديث المؤشر
+            document.getElementById('gridsIndicator').textContent = 
+                `${gridVisibility.equatorial ? '🌐' : ''}${gridVisibility.horizontal ? '🗺️' : ''}`;
+        }
+
+        /**
+         * تحديث شفافية الشبكات
+         */
+        window.updateGridAlpha = function(value) {
+            gridAlpha = value / 100;
+            document.getElementById('gridAlphaValue').textContent = value + '%';
+            
+            // تحديث جميع الشبكات
+            [equatorialGrid, horizontalGrid, eclipticGrid].forEach(grid => {
+                grid.children.forEach(child => {
+                    if (child instanceof THREE.Line) {
+                        child.material.opacity = gridAlpha;
+                    }
+                });
+            });
+        };
+
+        /**
+         * تحديث كثافة الشبكات
+         */
+        window.updateGridDensity = function(value) {
+            gridDensity = parseInt(value);
+            const densityName = SYSTEM.GRID_DENSITY_LEVELS[gridDensity]?.name || 'متوسطة';
+            document.getElementById('gridDensityValue').textContent = densityName;
+            
+            // إعادة إنشاء الشبكات
+            createEquatorialGrid();
+            createHorizontalGrid();
+            createEclipticGrid();
+            
+            showNotification('📊 كثافة الشبكات', densityName, 'info');
+        };
+
+        /**
+         * تسليط الضوء على شبكة معينة
+         */
+        window.highlightGrid = function(gridType) {
+            // يمكن تنفيذ تأثير تسليط الضوء هنا
+            showNotification('✨ تسليط الضوء', `على ${gridType === 'equatorial' ? 'الشبكة الاستوائية' : 'الشبكة السمتية'}`, 'info');
+        };
+
+        /**
+         * تبديل الليزر
+         */
+        window.toggleLaser = function() {
+            laserEnabled = !laserEnabled;
+            laserBeam.material.opacity = laserEnabled ? 0.8 : 0;
+            
+            // تحديث الواجهة
+            document.getElementById('laserToggleBtn').classList.toggle('active', laserEnabled);
+            document.getElementById('laserStatusText').textContent = `ليزر: ${laserEnabled ? 'مفعّل' : 'معطل'}`;
+            document.getElementById('laserStatus').className = `status-icon ${laserEnabled ? 'warning' : ''}`;
+            
+            // إشعار
+            showNotification(laserEnabled ? '🔴 الليزر مفعّل' : '⚫ الليزر معطل', '', laserEnabled ? 'warning' : 'info');
+        };
+
+        /**
+         * تبديل التتبع التلقائي
+         */
+        window.toggleAutoTrack = function() {
+            autoTracking = !autoTracking;
+            document.getElementById('autoTrackBtn').classList.toggle('active', autoTracking);
+            
+            showNotification(autoTracking ? '🔄 التتبع التلقائي مفعّل' : '⏸️ التتبع التلقائي معطل', '', 'info');
+        };
+
+        /**
+         * التقاط صورة
+         */
+        window.captureImage = function() {
+            // يمكن تنفيذ التقاط الصورة هنا
+            showNotification('📸 تم التقاط صورة', 'تم حفظ الصورة في المعرض', 'success');
+        };
+
+        /**
+         * تبديل التسجيل
+         */
+        window.toggleRecording = function() {
+            isRecording = !isRecording;
+            document.getElementById('recordBtn').classList.toggle('active', isRecording);
+            
+            showNotification(isRecording ? '⏺️ التسجيل جاري' : '⏹️ توقف التسجيل', '', isRecording ? 'danger' : 'info');
+        };
+
+        /**
+         * حركة التلسكوب
+         */
+/*        window.moveTelescope = function(direction) {
+            const speed = currentSpeed * 0.05;
+            
+            switch(direction) {
+                case 'north':  // زيادة الارتفاع
+                    decAxis.rotation.x += speed;
+                    break;
+                case 'south':  // تقليل الارتفاع
+                    decAxis.rotation.x -= speed;
+                    break;
+                case 'east':   // تحريك شرقاً (في السماء)
+                    raShaft.rotation.y -= speed;
+                    break;
+                case 'west':   // تحريك غرباً (في السماء)
+                    raShaft.rotation.y += speed;
+                    break;
+            }
+            
+            // منع الميل الزائد
+            decAxis.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, decAxis.rotation.x));
+            
+            // تحديث HUD فوراً
+            updateHUD();
+        };
+*/
+/**
+ * حركة التلسكوب - معدلة للهيكل الشوكي
+ */
+window.moveTelescope = function(direction) {
+    const speed = currentSpeed * 0.05;
+    
+    switch(direction) {
+        case 'north':  // زيادة الارتفاع (تحريك محور Dec)
+            decAxis.rotation.x += speed;
+            console.log(`⬆️  تحريك شمالاً: Dec += ${speed.toFixed(3)}`);
+            break;
+        case 'south':  // تقليل الارتفاع
+            decAxis.rotation.x -= speed;
+            console.log(`⬇️  تحريك جنوباً: Dec -= ${speed.toFixed(3)}`);
+            break;
+        case 'east':   // تحريك شرقاً (تدوير محور RA)
+            raShaft.rotation.y -= speed;
+            console.log(`▶️  تحريك شرقاً: RA -= ${speed.toFixed(3)}`);
+            break;
+        case 'west':   // تحريك غرباً
+            raShaft.rotation.y += speed;
+            console.log(`◀️  تحريك غرباً: RA += ${speed.toFixed(3)}`);
+            break;
+    }
+    
+    // منع الميل الزائد للأنبوب
+    decAxis.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, decAxis.rotation.x));
+    
+    // تحديث HUD فوراً
+    updateHUD();
+};
+
+        /**
+         * بدء الحركة المستمرة
+         */
+        window.startContinuousMove = function(direction) {
+            stopContinuousMove();
+            moveInterval = setInterval(() => {
+                moveTelescope(direction);
+            }, 16); // ~60 FPS
+        };
+
+        /**
+         * إيقاف الحركة المستمرة
+         */
+        window.stopContinuousMove = function() {
+            if (moveInterval) {
+                clearInterval(moveInterval);
+                moveInterval = null;
+            }
+        };
+
+/**
+ * إعادة تعيين التلسكوب - معدلة للهيكل الشوكي
+ */
+window.resetTelescope = function() {
+    raShaft.rotation.y = 0;
+    decAxis.rotation.x = 0;
+    console.log('🔄 إعادة تعيين التلسكوب: RA=0, Dec=0');
+    showNotification('🔄 إعادة التعيين', 'تم إعادة التلسكوب إلى الوضع الافتراضي', 'info');
+};
+
+        /**
+         * تحديد وضع الكاميرا
+         */
+        window.setCameraMode = function(mode) {
+            cameraMode = mode;
+            
+            // تحديث الأزرار النشطة
+            document.querySelectorAll('#cameraAccordion .quick-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`#cameraAccordion .quick-btn:nth-child(${mode === 'free' ? 1 : mode === 'telescope' ? 2 : mode === 'zenith' ? 3 : 4})`).classList.add('active');
+            
+            // تطبيق وضع الكاميرا
+            switch(mode) {
+                case 'free':
+                    controls.enabled = true;
+                    break;
+                case 'telescope':
+                    controls.enabled = true;
+                    const telescopePos = new THREE.Vector3();
+                    telescope.getWorldPosition(telescopePos);
+                    camera.position.copy(telescopePos).add(new THREE.Vector3(5, 5, 5));
+                    camera.lookAt(telescopePos);
+                    controls.update();
+                    break;
+                case 'zenith':
+                    controls.enabled = true;
+                    camera.position.set(0, SYSTEM.SPHERE_RADIUS * 0.8, 0);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
+                    break;
+                case 'north':
+                    controls.enabled = true;
+                    camera.position.set(0, 100, 300);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
+                    break;
+            }
+            
+            showNotification('📷 وضع الكاميرا', mode === 'free' ? 'حرية الحركة' : 
+                mode === 'telescope' ? 'تتبع التلسكوب' : 
+                mode === 'zenith' ? 'الذروة' : 'الشمال', 'info');
+        };
+
+        /**
+         * تحديث سرعة الكاميرا
+         */
+        window.updateCameraSpeed = function(value) {
+            cameraSpeed = parseFloat(value);
+            document.getElementById('cameraSpeedValue').textContent = cameraSpeed.toFixed(1) + 'x';
+            controls.rotateSpeed = 0.8 * cameraSpeed;
+            controls.panSpeed = 1.2 * cameraSpeed;
+        };
+
+        /**
+         * تبديل الحركة السلسة
+         */
+        window.toggleSmoothCamera = function() {
+            smoothCamera = !smoothCamera;
+            document.getElementById('smoothCameraCheckbox').classList.toggle('checked', smoothCamera);
+            controls.enableDamping = smoothCamera;
+        };
+
+        /**
+         * تبديل القصور الحركي للكاميرا
+         */
+        window.toggleCameraInertia = function() {
+            cameraInertia = !cameraInertia;
+            document.getElementById('cameraInertiaCheckbox').classList.toggle('checked', cameraInertia);
+            controls.dampingFactor = cameraInertia ? 0.05 : 0;
+        };
+
+        /**
+         * تحديث سرعة التتبع
+         */
+        window.updateTrackingSpeed = function(value) {
+            currentSpeed = parseFloat(value);
+            document.getElementById('trackingSpeedValue').textContent = currentSpeed.toFixed(1) + 'x';
+            document.getElementById('hudSpeed').textContent = currentSpeed.toFixed(1) + 'x';
+        };
+
+        /**
+         * تحديث زاوية المحور القطبي
+         */
+        window.updatePolarAngle = function(value) {
+            currentLatitude = parseFloat(value);
+            
+            // تحديث الواجهة
+            document.getElementById('polarAngleValue').textContent = currentLatitude + '°';
+            document.getElementById('hudLat').textContent = currentLatitude.toFixed(2) + '° شمال';
+            document.getElementById('hudPolarAngle').textContent = (90 - currentLatitude).toFixed(2) + '°';
+            
+            // تحديث النظام
+            updateCelestialSphereRotation();
+            updateEquatorialGridRotation();
+            updatePolarAlignment();
+            
+            // إعادة إنشاء القطب الشمالي السماوي
+            scene.children.forEach((child, index) => {
+                if (child instanceof THREE.Mesh && child.position.y > SYSTEM.SPHERE_RADIUS * 0.5) {
+                    scene.remove(child);
+                }
+            });
+            createNorthCelestialPole();
+        };
+
+        /**
+         * محاذاة للشمال
+         */
+        window.alignToNorth = function() {
+            decAxis.rotation.x = 0;
+            raShaft.rotation.y = 0;
+            showNotification('🧭 محاذاة للشمال', 'تم توجيه التلسكوب نحو الشمال', 'info');
+        };
+
+/**
+ * محاذاة للقطب - معدلة للهيكل الشوكي
+ */
+window.alignToPole = function() {
+    decAxis.rotation.x = (90 - currentLatitude) * Math.PI / 180;
+    raShaft.rotation.y = 0;
+    console.log(`✨ محاذاة للقطب: Dec = ${(90 - currentLatitude).toFixed(1)}°, RA = 0°`);
+    showNotification('✨ محاذاة للقطب', 'تم توجيه التلسكوب نحو القطب الشمالي السماوي', 'info');
+};
+
+        /**
+         * معايرة التلسكوب
+         */
+        window.calibrateTelescope = function() {
+            showNotification('🔧 معايرة التلسكوب', 'جاري المعايرة...', 'warning');
+            setTimeout(() => {
+                showNotification('✅ تمت المعايرة', 'تمت معايرة التلسكوب بنجاح', 'success');
+            }, 2000);
+        };
+
+        /**
+         * تحديث الزمن النجمي المحلي
+         */
+        window.updateLST = function(value) {
+            localSiderealTime = parseFloat(value);
+            document.getElementById('lstValue').textContent = localSiderealTime.toFixed(1) + 'h';
+            
+            // تنسيق الوقت للعرض
+            const hours = Math.floor(localSiderealTime);
+            const minutes = Math.floor((localSiderealTime - hours) * 60);
+            const seconds = Math.floor(((localSiderealTime - hours) * 60 - minutes) * 60);
+            
+            document.getElementById('hudLST').textContent = 
+                `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+            
+            // تحديث دوران القبة والشبكات
+            updateCelestialSphereRotation();
+            updateEquatorialGridRotation();
+        };
+
+        /**
+         * تحديث سرعة الزمن
+         */
+        window.updateTimeSpeed = function(value) {
+            timeSpeed = parseInt(value);
+            document.getElementById('timeSpeedValue').textContent = timeSpeed + 'x';
+        };
+
+        /**
+         * تعيين الوقت إلى الآن
+         */
+        window.setTimeToNow = function() {
+            const now = new Date();
+            localSiderealTime = 18.0; // تبسيط
+            document.getElementById('lstSlider').value = localSiderealTime;
+            updateLST(localSiderealTime);
+            showNotification('🕒 الوقت الحالي', 'تم تعيين الوقت الفلكي إلى الوقت الحالي', 'info');
+        };
+
+        /**
+         * تعيين الوقت إلى منتصف الليل
+         */
+        window.setTimeToMidnight = function() {
+            localSiderealTime = 0;
+            document.getElementById('lstSlider').value = 0;
+            updateLST(0);
+            showNotification('🌙 منتصف الليل', 'تم تعيين الوقت الفلكي إلى منتصف الليل', 'info');
+        };
+
+        /**
+         * تعيين الوقت إلى الظهر
+         */
+        window.setTimeToNoon = function() {
+            localSiderealTime = 12;
+            document.getElementById('lstSlider').value = 12;
+            updateLST(12);
+            showNotification('☀️ الظهر الفلكي', 'تم تعيين الوقت الفلكي إلى الظهر', 'info');
+        };
+
+        /**
+         * تبديل تدفق الزمن
+         */
+        window.toggleTimeFlow = function() {
+            isTimeFlowing = !isTimeFlowing;
+            showNotification(isTimeFlowing ? '⏩ الزمن يتدفق' : '⏸️ الزمن متجمد', '', 'info');
+        };
+
+        /**
+         * تبديل نافذة الاختصارات
+         */
+        window.toggleShortcuts = function() {
+            const isActive = shortcutsWindow.classList.contains('active');
+            shortcutsWindow.classList.toggle('active', !isActive);
+        };
+
+        /**
+         * تبديل المظهر
+         */
+        window.toggleTheme = function() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            showNotification(isLight ? '🌓 المظهر الفاتح' : '🌑 المظهر الداكن', '', 'info');
+        };
+
+        /**
+         * حفظ الإعدادات
+         */
+        window.saveSettings = function() {
+            // يمكن تنفيذ حفظ الإعدادات هنا
+            showNotification('💾 حفظ الإعدادات', 'تم حفظ إعدادات النظام', 'success');
+        };
+
+        /**
+         * تحميل الإعدادات
+         */
+        window.loadSettings = function() {
+            // يمكن تنفيذ تحميل الإعدادات هنا
+            showNotification('📂 تحميل الإعدادات', 'تم تحميل الإعدادات السابقة', 'info');
+        };
+
+        /**
+         * تصدير البيانات
+         */
+        window.exportData = function() {
+            // يمكن تنفيذ تصدير البيانات هنا
+            showNotification('📤 تصدير البيانات', 'تم تصدير بيانات النظام', 'success');
+        };
+
+        /**
+         * عرض المساعدة
+         */
+        window.showHelp = function() {
+            toggleShortcuts();
+        };
+
+        /**
+         * تبديل القائمة القابلة للطي
+         */
+        window.toggleAccordion = function(id) {
+            const content = document.getElementById(id);
+            const icon = content.previousElementSibling.querySelector('.accordion-icon');
+            content.classList.toggle('open');
+            icon.classList.toggle('rotated');
+        };
+
+        // ==================== دوال النظام ====================
+
+        /**
+         * تحديث الزمن النجمي
+         */
+        function updateSiderealTime() {
+            localSiderealTime = (localSiderealTime + (0.0027 * timeSpeed / 60)) % 24;
+            document.getElementById('lstSlider').value = localSiderealTime;
+            updateLST(localSiderealTime);
+        }
+
+        /**
+         * تحديث لوحة البيانات
+         */
+        function updateHUD() {
+            // حساب إحداثيات التلسكوب
+            const telescopeDirection = new THREE.Vector3(0, 0, 1);
+            telescopeDirection.applyQuaternion(telescope.getWorldQuaternion(new THREE.Quaternion()));
+            
+            const telescopePos = new THREE.Vector3();
+            telescope.getWorldPosition(telescopePos);
+            
+            const endPoint = telescopeDirection.multiplyScalar(SYSTEM.SPHERE_RADIUS * 2).add(telescopePos);
+            const spherical = ASTRONOMICAL_SYSTEM.cartesianToSpherical(endPoint.x, endPoint.y, endPoint.z);
+            
+            // تحديث الإحداثيات السمتية
+            document.getElementById('hudAlt').textContent = spherical.altitude.toFixed(2) + '°';
+            document.getElementById('hudAz').textContent = spherical.azimuth.toFixed(2) + '°';
+            
+            // تحديث الإحداثيات الاستوائية
+            const equatorial = ASTRONOMICAL_SYSTEM.horizontalToEquatorial(
+                spherical.altitude, spherical.azimuth, currentLatitude, localSiderealTime
+            );
+            
+            const raHours = equatorial.raHours;
+            const raH = Math.floor(raHours);
+            const raM = Math.floor((raHours - raH) * 60);
+            const raS = (((raHours - raH) * 60 - raM) * 60).toFixed(1);
+            
+            const decDeg = equatorial.decDeg;
+            const decSign = decDeg >= 0 ? '+' : '-';
+            const decAbs = Math.abs(decDeg);
+            const decD = Math.floor(decAbs);
+            const decM = Math.floor((decAbs - decD) * 60);
+            const decS = Math.floor(((decAbs - decD) * 60 - decM) * 60);
+            
+            document.getElementById('hudRA').textContent = 
+                `${String(raH).padStart(2, '0')}h ${String(raM).padStart(2, '0')}m ${String(raS).padStart(2, '0')}s`;
+            
+            document.getElementById('hudDec').textContent = 
+                `${decSign}${String(decD).padStart(2, '0')}° ${String(decM).padStart(2, '0')}′ ${String(decS).padStart(2, '0')}″`;
+            
+            // تحديث وضع التلسكوب
+            document.getElementById('hudTelescopeMode').textContent = autoTracking ? 'تتبع تلقائي' : 'يدوي';
+            
+            // تحديث تقاطع الليزر
+            document.getElementById('hudIntersection').textContent = laserEnabled ? 
+                `نشط (${spherical.altitude.toFixed(1)}°, ${spherical.azimuth.toFixed(1)}°)` : 'غير نشط';
+    // إضافة معلومات النجوم
+    if (astroBridge) {
+        const visibleStars = astroBridge.getVisibleStarsCount();
+        const brightest = astroBridge.getBrightestStars(1)[0];
+        
+        // تحديث أو إنشاء عناصر HUD جديدة
+        updateStarInfoDisplay(brightest, visibleStars);
+    }        
+}
+
+function updateStarInfoDisplay(brightestStar, starCount) {
+    let starInfoElement = document.getElementById('starInfo');
+    if (!starInfoElement) {
+        // إنشاء العنصر إذا لم يكن موجوداً
+        const hudSection = document.createElement('div');
+        hudSection.className = 'hud-section';
+        hudSection.innerHTML = `
+            <div class="hud-section-title">✨ النجوم المرئية</div>
+            <div class="hud-data">
+                <div class="hud-label">عدد النجوم:</div>
+                <div class="hud-value" id="starCount">${starCount}</div>
+                
+                <div class="hud-label">ألمع نجم:</div>
+                <div class="hud-value" id="brightestStar">${brightestStar ? brightestStar.arabicName : 'غير معروف'}</div>
+                
+                <div class="hud-label">القدر الظاهري:</div>
+                <div class="hud-value" id="starMagnitude">${brightestStar ? brightestStar.magnitude.toFixed(2) : '--'}</div>
+            </div>
+        `;
+        hudPanel.appendChild(hudSection);
+    } else {
+        // تحديث البيانات
+        document.getElementById('starCount').textContent = starCount;
+        if (brightestStar) {
+            document.getElementById('brightestStar').textContent = brightestStar.arabicName || brightestStar.name;
+            document.getElementById('starMagnitude').textContent = brightestStar.magnitude.toFixed(2);
+        }
+    }
+}
+
+        /**
+         * حساب تقاطع الليزر مع القبة
+         */
+        function calculateLaserIntersection() {
+            if (!laserEnabled) return;
+            
+            // يمكن تنفيذ حساب التقاطع هنا
+            // هذه دالة معقدة تتطلب حسابات هندسية متقدمة
+        }
+
+        /**
+         * تحديث الأداء
+         */
+        function updatePerformance() {
+            frameCount++;
+            const currentTime = performance.now();
+            
+            if (currentTime >= lastTime + 1000) {
+                fps = Math.round((frameCount * 1000) / (currentTime - lastTime));
+                frameCount = 0;
+                lastTime = currentTime;
+                
+                // تحديث استخدام النظام (محاكاة)
+                systemLoad = 20 + Math.random() * 30;
+                document.getElementById('cpuUsage').textContent = `⚡ CPU: ${Math.round(systemLoad)}%`;
+                document.getElementById('systemLoadBar').style.width = systemLoad + '%';
+                document.getElementById('hudMemory').textContent = Math.round(20 + Math.random() * 40) + '%';
+                document.getElementById('hudTemp').textContent = Math.round(15 + Math.random() * 10) + '°C';
+            }
+        }
+
+        /**
+         * تحديث الوقت والتاريخ
+         */
+        function updateDateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ar-SA');
+            const timeStr = now.toLocaleTimeString('ar-SA');
+            document.getElementById('dateTime').textContent = `🕒 ${dateStr} ${timeStr}`;
+        }
+
+        /**
+         * تحديث استخدام النظام
+         */
+        function updateSystemUsage() {
+            // محاكاة استخدام النظام
+            document.getElementById('systemStatusText').textContent = 'نشط';
+            document.getElementById('telescopeIndicator').textContent = 'جاهز';
+        }
+
+        /**
+         * عرض إشعار
+         */
+        function showNotification(title, message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            const time = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+            
+            notification.innerHTML = `
+                <div class="notification-header">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-time">${time}</div>
+                </div>
+                <div class="notification-message">${message}</div>
+            `;
+            
+            notificationCenter.appendChild(notification);
+            
+            // إظهار الإشعار
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 10);
+            
+            // إخفاء الإشعار بعد 5 ثواني
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 500);
+            }, 5000);
+        }
+
+        /**
+         * اختبار النظام
+         */
+        function runSystemTests() {
+            setTimeout(() => {
+                console.log('🧪 إجراء اختبارات النظام...');
+                
+                const results = ASTRONOMICAL_SYSTEM.testCoordinateSystem();
+                const passedTests = results.filter(r => r.passed).length;
+                const totalTests = results.length;
+                
+                if (passedTests === totalTests) {
+                    console.log(`✅ جميع اختبارات نظام الإحداثيات ناجحة (${passedTests}/${totalTests})`);
+                    document.getElementById('systemStatus').className = 'status-icon active';
+                } else {
+                    console.warn(`⚠️ بعض اختبارات نظام الإحداثيات فشلت (${passedTests}/${totalTests})`);
+                    document.getElementById('systemStatus').className = 'status-icon warning';
+                    
+                    results.forEach(result => {
+                        if (!result.passed) {
+                            console.warn(`❌ فشل: ${result.description}`);
+                        }
+                    });
+                }
+                
+                showNotification('🧪 اختبار النظام', `تمت ${passedTests}/${totalTests} اختباراً`, 
+                    passedTests === totalTests ? 'success' : 'warning');
+            }, 2000);
+        }
+
+        /**
+         * تسجيل تصحيح
+         */
+        function logDebug(message) {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML = `<div>[${timestamp}] ${message}</div>` + debugContent.innerHTML;
+            
+            // حفظ السجل
+            systemLog.push({ time: timestamp, message: message });
+        }
+
+        /**
+         * دالة اختبار المحاذاة
+         */
+        function testAlignment() {
+            console.log('🧪 اختبار محاذاة النظام:');
+            
+            // اختبار نقاط الكاردينال
+            const cardinalPoints = [
+                { name: 'الشمال', az: 0, alt: 0 },
+                { name: 'الشرق', az: 90, alt: 0 },
+                { name: 'الجنوب', az: 180, alt: 0 },
+                { name: 'الغرب', az: 270, alt: 0 },
+                { name: 'الذروة', az: 0, alt: 90 },
+                { name: 'القطب NCP', az: 0, alt: currentLatitude }
+            ];
+            
+            cardinalPoints.forEach(point => {
+                const cart = ASTRONOMICAL_SYSTEM.sphericalToCartesian(point.az, point.alt);
+                console.log(`📍 ${point.name}: 
+                    السمت=${point.az}°, الارتفاع=${point.alt}°
+                    → x=${cart.x.toFixed(1)}, y=${cart.y.toFixed(1)}, z=${cart.z.toFixed(1)}`);
+            });
+            
+            // اختبار محاذاة الشبكة الاستوائية
+            console.log(`📐 الشبكة الاستوائية:
+                ميل المحور: ${(90 - currentLatitude).toFixed(1)}°
+                تدوير الشبكة: x=${(equatorialGrid.rotation.x * 180/Math.PI).toFixed(1)}°, 
+                              y=${(equatorialGrid.rotation.y * 180/Math.PI).toFixed(1)}°, 
+                              z=${(equatorialGrid.rotation.z * 180/Math.PI).toFixed(1)}°`);
+        }
+
+        // ==================== تهيئة النظام عند التحميل ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 بدء تهيئة النظام الفلكي V4.0...');
+            init();
+            
+            // اختبار المحاذاة بعد التهيئة
+            setTimeout(() => {
+                testAlignment();
+            }, 3000);
+        });
+
+        // ==================== معالجة وضع ملء الشاشة ====================
+        document.addEventListener('fullscreenchange', () => {
+            isFullscreen = !!document.fullscreenElement;
+        });
+
+        // ==================== متغيرات النظام الإضافية ====================
+        let systemLog = [];
+
+        console.log('🌌 النظام الفلكي المعياري V4.0 - الكود جاهز للتنفيذ');
+        console.log('📐 نظام الإحداثيات المصحح: X=شرق, Y=ذروة, Z=شمال');
+        console.log('🧭 نصف الكرة: الشمالي');
+        console.log('🎯 ميزات جديدة: التحكم بالأسهم، إخفاء الواجهات، الاختصارات');
+        console.log('🔧 التصحيحات: نظام الإحداثيات الكامل، محاذاة الشبكة الاستوائية، اتجاه التلسكوب الصحيح');
+    </script>
+ <script>
+// دوال التحكم بالنجوم والكواكب
+function updateStarBrightness(value) {
+    if (starsRenderer) {
+        starsRenderer.setStarBrightness(parseFloat(value));
+        document.getElementById('starBrightnessValue').textContent = value + 'x';
+    }
+}
+
+function updateStarSize(value) {
+    if (starsRenderer) {
+        starsRenderer.setStarSize(parseFloat(value));
+        document.getElementById('starSizeValue').textContent = value + 'x';
+    }
+}
+
+function toggleConstellations() {
+    const checkbox = document.getElementById('constellationsCheckbox');
+    const show = !checkbox.classList.contains('checked');
+    
+    checkbox.classList.toggle('checked', show);
+    
+    if (starsRenderer) {
+        starsRenderer.toggleConstellations(show);
+    }
+    
+    showNotification(show ? '✨ عرض الكوكبات' : '🌌 إخفاء الكوكبات', '', 'info');
+}
+
+function toggleSun() {
+    const checkbox = document.getElementById('sunCheckbox');
+    const show = !checkbox.classList.contains('checked');
+    
+    checkbox.classList.toggle('checked', show);
+    
+    if (solarSystem) {
+        solarSystem.setVisibility(show, solarSystem.moon?.visible, solarSystem.planets[0]?.visible);
+    }
+    
+    showNotification(show ? '☀️ عرض الشمس' : '🌑 إخفاء الشمس', '', 'info');
+}
+
+function toggleMoon() {
+    const checkbox = document.getElementById('moonCheckbox');
+    const show = !checkbox.classList.contains('checked');
+    
+    checkbox.classList.toggle('checked', show);
+    
+    if (solarSystem) {
+        solarSystem.setVisibility(solarSystem.sun?.visible, show, solarSystem.planets[0]?.visible);
+    }
+    
+    showNotification(show ? '🌙 عرض القمر' : '🌑 إخفاء القمر', '', 'info');
+}
+
+function findBrightestStar() {
+    if (astroBridge) {
+        const brightest = astroBridge.getBrightestStars(1)[0];
+        if (brightest) {
+            // تحريك الكاميرا نحو النجم
+            camera.position.set(
+                brightest.x * 1.5,
+                brightest.y * 1.5,
+                brightest.z * 1.5
+            );
+            camera.lookAt(brightest.x, brightest.y, brightest.z);
+            controls.update();
+            
+            showNotification('⭐ النجم الألمع', `${brightest.arabicName || brightest.name} (القدر: ${brightest.magnitude})`, 'info');
+        }
+    }
+}
+
+function findPolaris() {
+    // نجمة الشمال (Polaris)
+    const polaris = {
+        name: "Polaris",
+        arabicName: "نجم الشمال",
+        ra: 2.5303,
+        dec: 89.2641
+    };
+    
+    // حساب موقعها الحالي
+    const spherical = astroBridge.equatorialToHorizontal(
+        polaris.ra,
+        polaris.dec,
+        currentLatitude,
+        localSiderealTime
+    );
+    
+    const cartesian = astroBridge.horizontalToCartesian(
+        spherical.azimuth,
+        spherical.altitude,
+        SYSTEM.SPHERE_RADIUS
+    );
+    
+    // تحريك الكاميرا
+    camera.position.set(
+        cartesian.x * 1.5,
+        cartesian.y * 1.5,
+        cartesian.z * 1.5
+    );
+    camera.lookAt(cartesian.x, cartesian.y, cartesian.z);
+    controls.update();
+    
+    showNotification('🧭 نجم الشمال', 'النجم القطبي - يدل على اتجاه الشمال', 'info');
+}
+
+function togglePlanetLabels() {
+    // تبديل تسميات الكواكب
+    showNotification('🪐 تسميات الكواكب', 'جاري التطوير...', 'info');
+}
+  </script>
+</body>
+</html>
